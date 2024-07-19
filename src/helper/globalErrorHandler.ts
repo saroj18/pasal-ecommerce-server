@@ -1,9 +1,9 @@
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
 
 export const globalErrorHandler =  (
   err: ApiError,
-  resp: Response
+  resp: Response,
 ) => {
   if (err instanceof ApiError) {
     resp

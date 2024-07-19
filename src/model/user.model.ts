@@ -1,28 +1,26 @@
 import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
-enum RoleEnum {
-  CUSTOMER = "customer",
-  SELLER = "seller",
-  ADMIN = "admin",
-}
+import { z } from "zod";
 
 interface Customer extends Document {
-  name: string;
+  fullname: string;
   email: string;
   password: string;
-  role: RoleEnum;
+  role: string;
   refreshToken: string;
   address: string;
-  gender: "male" | "female";
+  gender: string;
   username: string;
-  verify:Boolean
+  verify: Boolean;
+  comparePassword: (password: string) => boolean;
+  generateAccessToken: () => string;
+  generateRefreshToken: () => string;
 }
 
-const User: Schema<Customer> = new Schema(
+const UserSchema: Schema<Customer> = new Schema(
   {
-    name: {
+    fullname: {
       type: String,
       required: true,
       trim: true,
@@ -40,19 +38,24 @@ const User: Schema<Customer> = new Schema(
     refreshToken: {
       type: String,
       trim: true,
+      default: null,
     },
     role: {
       type: String,
       required: true,
       trim: true,
+      enum: ["customer", "seller", "admin"],
     },
     address: {
       type: String,
       trim: true,
+      default: null,
     },
     gender: {
       type: String,
       trim: true,
+      enum: ["male", "female"],
+      default: null,
     },
     username: {
       type: String,
@@ -61,43 +64,42 @@ const User: Schema<Customer> = new Schema(
     verify: {
       type: Boolean,
       default: false,
-    },
+    }
   },
   {
     timestamps: true,
   }
 );
 
-User.pre('save',async function(next){
-    if(!this.isModified("password")){
-        return next()
-    }
-    this.password=await bcrypt.hash(this.password,10)
-    next()
-})
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
-User.methods.comparePassword = async (password: string): Promise<boolean> => {
-  const check = await bcrypt.compare(password, (this as any).password);
+UserSchema.methods.comparePassword = async function (password: string) {
+  const check = await bcrypt.compare(password, this.password);
   return check;
 };
 
+UserSchema.methods.generateAccessToken = function () {
+  const token = jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+    },
+    process.env.ACCESS_TOKEN_SECRETE as string,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY_TIME,
+    }
+  );
+  return token;
+};
 
-User.methods.generateAccessToken=function (){
-    const token = jwt.sign(
-        {
-          _id: this._id,
-          email: this.email,
-          username: this.username,
-        },
-        process.env.ACCESS_TOKEN_SECRETE as string,
-        {
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRY_TIME,
-        }
-      );
-      return token;
-}
-
-User.methods.generateRefreshToken = function(){
+UserSchema.methods.generateRefreshToken = function () {
   const token = jwt.sign(
     {
       _id: this._id,
@@ -107,7 +109,7 @@ User.methods.generateRefreshToken = function(){
       expiresIn: process.env.REFRESH_TOKEN_EXPIRY_TIME,
     }
   );
-  return token
+  return token;
 };
 
-export const UserModel = mongoose.model<Customer>("user", User);
+export const User = mongoose.model<Customer>("user", UserSchema);

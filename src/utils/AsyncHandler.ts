@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import { ApiError } from "./ApiError.js"
 
-type FunctionType=(req:Request,resp:Response,next:NextFunction)=>Promise<void>
+export type FunctionType=(req:Request,resp:Response,next:NextFunction)=>Promise<void>
 
 export const asyncHandler=(func:FunctionType)=>{
     return async(req:Request,resp:Response,next:NextFunction)=>{
