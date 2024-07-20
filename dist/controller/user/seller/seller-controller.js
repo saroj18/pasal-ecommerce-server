@@ -7,16 +7,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { asyncHandler } from "../utils/AsyncHandler.js";
-import { errorFormatter } from "../utils/errorFormater.js";
-import { UserLoginZodSchema, UserSignUpZodSchema, } from "../zodschema/user/user-signup.js";
-import { User } from "../model/user.model.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../../../utils/AsyncHandler.js";
+import { errorFormatter } from "../../../utils/errorFormater.js";
+import { UserLoginZodSchema, UserSignUpZodSchema, } from "../../../zodschema/user/user-signup.js";
+import { User } from "../../../model/user.model.js";
+import { ApiResponse } from "../../../utils/ApiResponse.js";
 const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
-    if (!userInfo) {
-        throw new Error("user not found");
-    }
+    console.log(userInfo);
     let accessToken = userInfo === null || userInfo === void 0 ? void 0 : userInfo.generateAccessToken();
     let refreshToken = userInfo === null || userInfo === void 0 ? void 0 : userInfo.generateRefreshToken();
     return { accessToken, refreshToken };
@@ -40,7 +38,6 @@ export const signUpUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     if (findUser) {
         throw new Error("email already register");
     }
-    console.log(findUser);
     const saveOnDb = yield User.create({
         username,
         password,
@@ -71,8 +68,6 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     if (!checkPassword) {
         throw new Error("incorrect password");
     }
-    findUser.role = role;
-    yield findUser.save();
     const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser._id);
     yield User.findByIdAndUpdate(findUser._id, { refreshToken });
     const options = {

@@ -80,8 +80,7 @@ UserSchema.pre("save", async function (next) {
 });
 
 UserSchema.methods.comparePassword = async function (password: string) {
-  const check = await bcrypt.compare(password, this.password);
-  return check;
+  return await bcrypt.compare(password, this.password);
 };
 
 UserSchema.methods.generateAccessToken = function () {
@@ -90,6 +89,7 @@ UserSchema.methods.generateAccessToken = function () {
       _id: this._id,
       email: this.email,
       username: this.username,
+      role:this.role
     },
     process.env.ACCESS_TOKEN_SECRETE as string,
     {

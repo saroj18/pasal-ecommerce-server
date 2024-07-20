@@ -14,9 +14,7 @@ import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
-    if (!userInfo) {
-        throw new Error("user not found");
-    }
+    console.log(userInfo);
     let accessToken = userInfo === null || userInfo === void 0 ? void 0 : userInfo.generateAccessToken();
     let refreshToken = userInfo === null || userInfo === void 0 ? void 0 : userInfo.generateRefreshToken();
     return { accessToken, refreshToken };
@@ -71,8 +69,6 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     if (!checkPassword) {
         throw new Error("incorrect password");
     }
-    findUser.role = role;
-    yield findUser.save();
     const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser._id);
     yield User.findByIdAndUpdate(findUser._id, { refreshToken });
     const options = {

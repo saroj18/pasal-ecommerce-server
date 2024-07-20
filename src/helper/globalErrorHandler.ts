@@ -1,4 +1,4 @@
-import { NextFunction, Response } from "express";
+import {  Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
 
 export const globalErrorHandler =  (
@@ -17,7 +17,7 @@ export const globalErrorHandler =  (
     resp
       .status(400)
       .json({
-        error: "internal server error",
+        error:"Internal server error",
         statusCode: 400,
         success: false,
       });

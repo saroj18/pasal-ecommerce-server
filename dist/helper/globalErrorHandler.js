@@ -13,7 +13,7 @@ export const globalErrorHandler = (err, resp) => {
         resp
             .status(400)
             .json({
-            error: "internal server error",
+            error: "Internal server error",
             statusCode: 400,
             success: false,
         });

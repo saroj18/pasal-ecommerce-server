@@ -14,6 +14,7 @@ export const asyncHandler = (func) => {
             yield func(req, resp, next);
         }
         catch (error) {
+            console.log(error);
             let customError = new ApiError(error.message);
             next(customError);
         }

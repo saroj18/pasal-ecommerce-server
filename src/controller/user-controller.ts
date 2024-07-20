@@ -1,5 +1,4 @@
-import { NextFunction, Request, Response } from "express";
-import { asyncHandler, FunctionType } from "../utils/AsyncHandler.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
 import { errorFormatter } from "../utils/errorFormater.js";
 import {
   UserLoginZodSchema,
@@ -10,10 +9,13 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Schema } from "mongoose";
 
 const generateAccessTokenAndRefreshToken = async (
-  id: string
+  id: Schema.Types.ObjectId
 ) => {
   const userInfo = await User.findById(id);
-  console.log(userInfo);
+  
+  if(!userInfo){
+    throw new Error("user not found");
+  }
   let accessToken = userInfo?.generateAccessToken();
   let refreshToken = userInfo?.generateRefreshToken();
   return { accessToken, refreshToken };
@@ -66,13 +68,17 @@ export const loginUser = asyncHandler(async (req, resp) => {
         throw new Error("User not found");
     }
 
-  const checkPassword = findUser.comparePassword(password);
+  const checkPassword = await findUser.comparePassword(password);
+  console.log('check>>',checkPassword)
 
   if (!checkPassword) {
     throw new Error("incorrect password");
   }
+
+  findUser.role=role;
+  await findUser.save();
   const { accessToken, refreshToken } =
-    await generateAccessTokenAndRefreshToken(findUser._id as string);
+    await generateAccessTokenAndRefreshToken(findUser._id as Schema.Types.ObjectId);
 
   await User.findByIdAndUpdate(findUser._id, { refreshToken });
 
