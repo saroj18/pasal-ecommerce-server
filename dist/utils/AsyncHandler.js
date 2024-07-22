@@ -7,16 +7,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { ApiError } from "./ApiError.js";
 export const asyncHandler = (func) => {
     return (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             yield func(req, resp, next);
         }
         catch (error) {
-            console.log(error);
-            let customError = new ApiError(error.message);
-            next(customError);
+            next(error);
         }
     });
 };

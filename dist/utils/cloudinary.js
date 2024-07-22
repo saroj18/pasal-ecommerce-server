@@ -41,3 +41,16 @@ export const uploadImageOnCloudinary = (images, folderName) => __awaiter(void 0,
         throw new Error(error.message);
     }
 });
+export const deleteFromCloudinary = (imageCollection) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const deleteImages = yield Promise.all(imageCollection.map((img) => {
+            var _a;
+            const publicId = (_a = img.split("/").pop()) === null || _a === void 0 ? void 0 : _a.split(".")[0];
+            return cloudinary.uploader.destroy(publicId);
+        }));
+        return deleteImages;
+    }
+    catch (error) {
+        throw new Error(error.message);
+    }
+});

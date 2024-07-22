@@ -2,6 +2,7 @@ import { Schema } from "mongoose";
 import { User } from "../model/user.model.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
 
 interface TokenPayload extends JwtPayload{
   _id: Schema.Types.ObjectId;
@@ -21,7 +22,6 @@ export const sellerAuth = asyncHandler(async (req, resp, next) => {
         accessToken,
         process.env.ACCESS_TOKEN_SECRETE as string
     )) as TokenPayload;
-    console.log('token>>>>',decodAccessToken)
 
   if (!decodAccessToken) {
     resp.status(401);
@@ -32,12 +32,12 @@ export const sellerAuth = asyncHandler(async (req, resp, next) => {
 
   if (!findUser) {
     resp.status(404);
-    throw new Error("User not found");
+    throw new ApiError("User not found");
   }
 
   if (findUser.role !== "seller") {
     resp.status(401);
-    throw new Error("You are not authorized to access this route");
+    throw new ApiError("unauthorized request");
   }
   req.user = findUser._id;
   next();

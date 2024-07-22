@@ -5,6 +5,7 @@ export const globalErrorHandler =  (
   err: ApiError,
   resp: Response,
 ) => {
+  console.log('error>>>',err);
   if (err instanceof ApiError) {
     resp
       .status(err.statusCode)

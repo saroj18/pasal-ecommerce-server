@@ -64,12 +64,16 @@ export const ProductZodSchema = z.object({
     })
     .trim()
     .min(1, { message: "price required" }),
-  features: z
-    .string({
-      required_error: "features required",
-      invalid_type_error: "invalid features",
-    })
-    .trim()
-    .min(1, { message: "features required" }),
-  images: z.any().refine((val)=>val.length>=3,{message:"image must be 3"})
+  features: z.array(
+    z
+      .string({
+        required_error: "features required",
+        invalid_type_error: "invalid features",
+      })
+      .trim()
+      .min(1, { message: "features required" })
+  ),
+  images: z
+    .any()
+    .refine((val) => val.length >= 3, { message: "image must be 3" }),
 });

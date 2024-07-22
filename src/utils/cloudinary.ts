@@ -41,3 +41,18 @@ export const uploadImageOnCloudinary = async (
     throw new Error(error.message);
   }
 };
+
+
+export const deleteFromCloudinary = async (imageCollection: string[]) => {
+  try {
+    const deleteImages = await Promise.all(
+      imageCollection.map((img) => {
+        const publicId = img.split("/").pop()?.split(".")[0];
+        return cloudinary.uploader.destroy(publicId as string);
+      })
+    );
+    return deleteImages;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};

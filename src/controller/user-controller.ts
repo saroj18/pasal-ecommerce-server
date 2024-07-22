@@ -7,6 +7,8 @@ import {
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Schema } from "mongoose";
+import e, { CookieOptions } from "express";
+import { ApiError } from "../utils/ApiError.js";
 
 const generateAccessTokenAndRefreshToken = async (
   id: Schema.Types.ObjectId
@@ -14,7 +16,7 @@ const generateAccessTokenAndRefreshToken = async (
   const userInfo = await User.findById(id);
   
   if(!userInfo){
-    throw new Error("user not found");
+    throw new ApiError("user not found");
   }
   let accessToken = userInfo?.generateAccessToken();
   let refreshToken = userInfo?.generateRefreshToken();
@@ -37,7 +39,7 @@ export const signUpUser = asyncHandler(async (req, resp) => {
   }
   const findUser = await User.findOne({ email });
   if (findUser) {
-    throw new Error("email already register");
+    throw new ApiError("email already register");
   }
   console.log(findUser)
   const saveOnDb = await User.create({
@@ -65,14 +67,13 @@ export const loginUser = asyncHandler(async (req, resp) => {
     
     const findUser = await User.findOne({ email });
     if (!findUser) {
-        throw new Error("User not found");
+        throw new ApiError("User not found");
     }
 
   const checkPassword = await findUser.comparePassword(password);
-  console.log('check>>',checkPassword)
 
   if (!checkPassword) {
-    throw new Error("incorrect password");
+    throw new ApiError("incorrect password");
   }
 
   findUser.role=role;
@@ -82,8 +83,12 @@ export const loginUser = asyncHandler(async (req, resp) => {
 
   await User.findByIdAndUpdate(findUser._id, { refreshToken });
 
-  const options = {
+  const options:CookieOptions = {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    // sameSite: "none",
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
   };
 
   resp.cookie("accessToken", accessToken, options);

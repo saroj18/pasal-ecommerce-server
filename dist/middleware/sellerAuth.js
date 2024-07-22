@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { User } from "../model/user.model.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
 ;
 export const sellerAuth = asyncHandler((req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { accessToken } = req.cookies;
@@ -18,7 +19,6 @@ export const sellerAuth = asyncHandler((req, resp, next) => __awaiter(void 0, vo
         throw new Error("please provide token first");
     }
     const decodAccessToken = (jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE));
-    console.log('token>>>>', decodAccessToken);
     if (!decodAccessToken) {
         resp.status(401);
         throw new Error("Invalid token");
@@ -26,11 +26,11 @@ export const sellerAuth = asyncHandler((req, resp, next) => __awaiter(void 0, vo
     const findUser = yield User.findById(decodAccessToken._id);
     if (!findUser) {
         resp.status(404);
-        throw new Error("User not found");
+        throw new ApiError("User not found");
     }
     if (findUser.role !== "seller") {
         resp.status(401);
-        throw new Error("You are not authorized to access this route");
+        throw new ApiError("unauthorized request");
     }
     req.user = findUser._id;
     next();

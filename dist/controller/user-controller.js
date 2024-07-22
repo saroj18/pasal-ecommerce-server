@@ -12,10 +12,11 @@ import { errorFormatter } from "../utils/errorFormater.js";
 import { UserLoginZodSchema, UserSignUpZodSchema, } from "../zodschema/user/user-signup.js";
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.js";
 const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
     if (!userInfo) {
-        throw new Error("user not found");
+        throw new ApiError("user not found");
     }
     let accessToken = userInfo === null || userInfo === void 0 ? void 0 : userInfo.generateAccessToken();
     let refreshToken = userInfo === null || userInfo === void 0 ? void 0 : userInfo.generateRefreshToken();
@@ -38,7 +39,7 @@ export const signUpUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     }
     const findUser = yield User.findOne({ email });
     if (findUser) {
-        throw new Error("email already register");
+        throw new ApiError("email already register");
     }
     console.log(findUser);
     const saveOnDb = yield User.create({
@@ -64,12 +65,11 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     }
     const findUser = yield User.findOne({ email });
     if (!findUser) {
-        throw new Error("User not found");
+        throw new ApiError("User not found");
     }
     const checkPassword = yield findUser.comparePassword(password);
-    console.log('check>>', checkPassword);
     if (!checkPassword) {
-        throw new Error("incorrect password");
+        throw new ApiError("incorrect password");
     }
     findUser.role = role;
     yield findUser.save();
@@ -77,6 +77,10 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     yield User.findByIdAndUpdate(findUser._id, { refreshToken });
     const options = {
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        // sameSite: "none",
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     };
     resp.cookie("accessToken", accessToken, options);
     resp.cookie("refreshToken", refreshToken, options);
