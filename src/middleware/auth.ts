@@ -11,7 +11,7 @@ interface TokenPayload extends JwtPayload{
   username: string;
 };
 
-export const sellerAuth = asyncHandler(async (req, resp, next) => {
+export const Auth = asyncHandler(async (req, resp, next) => {
   const {accessToken} = req.cookies;
   console.log(accessToken)
   
@@ -36,10 +36,6 @@ export const sellerAuth = asyncHandler(async (req, resp, next) => {
     throw new ApiError("User not found");
   }
 
-  if (findUser.role !== "seller") {
-    resp.status(401);
-    throw new ApiError("unauthorized request");
-  }
   req.user = findUser._id;
   next();
 });

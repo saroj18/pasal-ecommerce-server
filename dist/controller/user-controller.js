@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { errorFormatter } from "../utils/errorFormater.js";
-import { UserLoginZodSchema, UserSignUpZodSchema, } from "../zodschema/user/user-signup.js";
+import { UserAddressZodSchema, UserLoginZodSchema, UserSignUpZodSchema, userVerifyZodSchema, } from "../zodschema/user/user-signup.js";
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
+import { Address } from "../model/user-address-model.js";
 const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
     if (!userInfo) {
@@ -85,4 +86,105 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     resp.cookie("accessToken", accessToken, options);
     resp.cookie("refreshToken", refreshToken, options);
     resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
+}));
+export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const { fullname, email, mobile, dob, gender, state, district, city, tole, ward, nearBy, defaultAddress, location, } = req.body;
+    if (!email && !fullname) {
+        const validateInfo = UserAddressZodSchema.safeParse({
+            state,
+            city,
+            district,
+            tole,
+            ward,
+            nearBy,
+            defaultAddress,
+            location
+        });
+        if (validateInfo.error) {
+            const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
+            resp.status(400).json({ success: false, error });
+            return;
+        }
+        const createAddress = yield Address.create({
+            state,
+            city,
+            tole,
+            district,
+            ward,
+            nearBy,
+            defaultAddress,
+            location,
+            addressOf: req.user._id
+        });
+        if (!createAddress) {
+            throw new ApiError("faild to save address");
+        }
+        resp.status(200).json(new ApiResponse("successfully added address", 200, createAddress));
+        return;
+    }
+    const validateInfo = userVerifyZodSchema.safeParse({
+        fullname,
+        email,
+        mobile,
+        dob,
+        gender,
+        state,
+        district,
+        city,
+        tole,
+        ward,
+        nearBy,
+        defaultAddress,
+        location,
+    });
+    if (validateInfo.error) {
+        const error = errorFormatter((_b = validateInfo.error) === null || _b === void 0 ? void 0 : _b.format());
+        resp.status(400).json({ success: false, error });
+        return;
+    }
+    const findUser = yield User.findOne({ email, fullname });
+    if (!findUser) {
+        throw new ApiError("user not found");
+    }
+    if (findUser === null || findUser === void 0 ? void 0 : findUser.verify) {
+        throw new ApiError("Email already verified");
+    }
+    const createAddress = yield Address.create({
+        state,
+        city,
+        tole,
+        district,
+        ward,
+        nearBy,
+        defaultAddress,
+        location,
+        addressOf: req.user._id
+    });
+    if (!createAddress) {
+        throw new ApiError("faild to save address");
+    }
+    findUser.gender = gender;
+    findUser.dob = dob;
+    findUser.mobile = mobile;
+    findUser.address = createAddress._id;
+    findUser.verify = true;
+    yield findUser.save();
+    resp.status(200).json(new ApiResponse("successfully verify", 200, null));
+}));
+export const userInfo = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { _id } = req.user;
+    if (!_id) {
+        throw new ApiError("please provide id");
+    }
+    const findUser = yield User.findById(_id);
+    if (!findUser) {
+        throw new Error("user not found");
+    }
+    resp.status(200).json(new ApiResponse("", 200, findUser));
+}));
+export const getAddress = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { _id } = req.user;
+    const findAddress = yield Address.find({ addressOf: _id }).populate('addressOf');
+    resp.status(200).json(new ApiResponse('', 200, findAddress));
 }));

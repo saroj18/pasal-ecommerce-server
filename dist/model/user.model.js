@@ -38,8 +38,8 @@ const UserSchema = new Schema({
         enum: ["customer", "seller", "admin"],
     },
     address: {
-        type: String,
-        trim: true,
+        type: Schema.Types.ObjectId,
+        ref: "address",
         default: null,
     },
     gender: {
@@ -55,9 +55,18 @@ const UserSchema = new Schema({
     verify: {
         type: Boolean,
         default: false,
-    }
+    },
+    dob: {
+        type: String,
+        default: null,
+    },
+    mobile: {
+        type: String,
+        default: null,
+    },
 }, {
     timestamps: true,
+    validateBeforeSave: true,
 });
 UserSchema.pre("save", function (next) {
     return __awaiter(this, void 0, void 0, function* () {

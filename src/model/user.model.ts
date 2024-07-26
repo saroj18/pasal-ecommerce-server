@@ -9,13 +9,15 @@ interface Customer extends Document {
   password: string;
   role: string;
   refreshToken: string;
-  address: string;
+  address: Schema.Types.ObjectId;
   gender: string;
   username: string;
   verify: Boolean;
   comparePassword: (password: string) => boolean;
   generateAccessToken: () => string;
   generateRefreshToken: () => string;
+  mobile:string
+  dob:string
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -47,8 +49,8 @@ const UserSchema: Schema<Customer> = new Schema(
       enum: ["customer", "seller", "admin"],
     },
     address: {
-      type: String,
-      trim: true,
+      type: Schema.Types.ObjectId,
+      ref: "address",
       default: null,
     },
     gender: {
@@ -64,11 +66,21 @@ const UserSchema: Schema<Customer> = new Schema(
     verify: {
       type: Boolean,
       default: false,
-    }
+    },
+    dob: {
+      type: String,
+      default: null,
+    },
+    mobile: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
+    validateBeforeSave: true,
   }
+  
 );
 
 UserSchema.pre("save", async function (next) {

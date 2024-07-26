@@ -5,6 +5,7 @@ import { ApiError } from './utils/ApiError.js'
 import cors from 'cors'
 import { productRouter } from './route/user/product-route.js'
 import cookieParser from 'cookie-parser'
+import { sellerRoute } from './route/user/sellerr-route.js'
 
 export const app=express()
 
@@ -17,6 +18,7 @@ app.use(cookieParser())
 
 app.use('/api/v1/user',userRouter)
 app.use('/api/v1/product',productRouter)
+app.use('/api/v1/seller',sellerRoute)
 app.use((err:ApiError,req:Request,resp:Response,next:NextFunction)=>{
     globalErrorHandler(err,resp)
 })
