@@ -1,4 +1,8 @@
+import { esewaOrderForm } from "../helper/esewaOrderForm.js";
+import { Cart } from "../model/cart-model.js";
+import { Order } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
+import { WishList } from "../model/wishlist-model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
@@ -7,6 +11,7 @@ import {
   uploadImageOnCloudinary,
 } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
+import { createOrderHash } from "../utils/esewaOrderHash.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
 
 export const addProduct = asyncHandler(async (req, resp) => {
@@ -180,4 +185,142 @@ export const updateProduct = asyncHandler(async (req, resp) => {
   resp
     .status(200)
     .json(new ApiResponse("product updated successfully", 200, updateProduct));
+});
+
+export const addOnWishlist = asyncHandler(async (req, resp) => {
+  const { productId } = req.body;
+  const { _id } = req.user;
+
+  if (!productId || !_id) {
+    throw new ApiError("please provide id");
+  }
+
+  const findProduct = await Product.findById(productId);
+
+  if (!findProduct) {
+    throw new ApiError("product not found");
+  }
+
+  const findOnWishList = await WishList.findOne({
+    addedBy: _id,
+    product: productId,
+  });
+
+  if (findOnWishList) {
+    throw new ApiError("product already on wishlist");
+  }
+
+  const addOnWishList = await WishList.create({
+    addedBy: _id,
+    product: productId,
+  });
+
+  if (!addOnWishList) {
+    throw new ApiError("faild to add on wishlist");
+  }
+
+  resp
+    .status(200)
+    .json(
+      new ApiResponse("successfully added on wishlist", 200, addOnWishList)
+    );
+});
+
+export const getWishListProduct = asyncHandler(async (req, resp) => {
+  const { _id } = req.user;
+
+  if (!_id) {
+    throw new ApiError("please provide id");
+  }
+
+  const findWishList = await WishList.find({ addedBy: _id }).populate(
+    "product"
+  );
+
+  if (!findWishList) {
+    throw new ApiError("wishlist is empty");
+  }
+
+  resp.status(200).json(new ApiResponse("", 200, findWishList));
+});
+
+export const deleteWishListProduct = asyncHandler(async (req, resp) => {
+  const { productId } = req.body;
+  const { _id } = req.user;
+
+  if (!productId || !_id) {
+    throw new ApiError("please provide required info");
+  }
+
+  const findOnWishList = await WishList.findOneAndDelete({
+    addedBy: _id,
+    product: productId,
+  });
+
+  if (!findOnWishList) {
+    throw new ApiError("product not found");
+  }
+
+  resp
+    .status(200)
+    .json(new ApiResponse("product deleted successfully", 200, findOnWishList));
+});
+
+export const wishListAndCartCount = asyncHandler(async (req, resp) => {
+  const { _id } = req.user;
+
+  if (!_id) {
+    throw new ApiError("please provide id");
+  }
+
+  const wishListCount = await WishList.find({ addedBy: _id }).countDocuments();
+  const cartCount = await Cart.find({ addedBy: _id }).countDocuments();
+
+  resp.status(200).json(new ApiResponse("", 200, { wishListCount, cartCount }));
+});
+
+export const productOrder = asyncHandler(async (req, resp) => {
+  const { orderDetails } = req.body;
+  const {
+    product,
+    billingAddress,
+    deleveryAddress,
+    payMethod,
+    totalPrice,
+    deleveryCharge,
+  } = orderDetails;
+  const { _id } = req.user;
+  console.log(totalPrice);
+  console.log(deleveryCharge);
+
+  if (
+    !billingAddress ||
+    !deleveryAddress ||
+    !payMethod ||
+    !totalPrice ||
+    product.length < 1
+  ) {
+    throw new ApiError("please provide all details");
+  }
+
+  const order = await Order.create({
+    product,
+    payMethod,
+    totalPrice,
+    billingAddress,
+    deleveryAddress,
+    purchaseBy: _id,
+    deleveryCharge,
+  });
+
+  const esewaHash = createOrderHash(order.totalPrice, order._id as string,deleveryCharge);
+
+  const orderData = await esewaOrderForm(
+    esewaHash,
+    order.totalPrice,
+    order._id as string,
+    order.deleveryCharge
+  );
+
+  resp.status(200).json(new ApiResponse("", 200, orderData));
 });

@@ -7,14 +7,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-export const asyncHandler = (func) => {
-    return (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
-        try {
-            yield func(req, resp, next);
-        }
-        catch (error) {
-            console.log(error.stack);
-            next(error);
-        }
-    });
-};
+export const esewaOrderForm = (hash, amount, orderId, deleveryCharge) => __awaiter(void 0, void 0, void 0, function* () {
+    const formDataEntries = {
+        amount: amount,
+        tax_amount: "0",
+        total_amount: amount + deleveryCharge,
+        transaction_uuid: orderId.toString(),
+        product_code: "EPAYTEST",
+        product_service_charge: "0",
+        product_delivery_charge: deleveryCharge,
+        success_url: "http://localhost:5171",
+        failure_url: "http://localhost:5171",
+        signed_field_names: "total_amount,transaction_uuid,product_code",
+        signature: hash,
+        secret: "8gBm/:&EnhH.1/q",
+    };
+    return formDataEntries;
+});

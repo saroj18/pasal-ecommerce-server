@@ -4,25 +4,25 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 
-interface TokenPayload extends JwtPayload{
+interface TokenPayload extends JwtPayload {
   _id: Schema.Types.ObjectId;
   email: string;
   role: string;
   username: string;
-};
+}
 
 export const sellerAuth = asyncHandler(async (req, resp, next) => {
-  const {accessToken} = req.cookies;
-  console.log(accessToken)
-  
+  const { accessToken } = req.cookies;
+  console.log(accessToken);
+
   if (!accessToken) {
-      resp.status(401);
-      throw new Error("please provide token first");
-    }
-    const decodAccessToken = (jwt.verify(
-        accessToken,
-        process.env.ACCESS_TOKEN_SECRETE as string
-    )) as TokenPayload;
+    resp.status(401);
+    throw new ApiError("please provide token first");
+  }
+  const decodAccessToken = jwt.verify(
+    accessToken,
+    process.env.ACCESS_TOKEN_SECRETE as string
+  ) as TokenPayload;
 
   if (!decodAccessToken) {
     resp.status(401);

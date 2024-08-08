@@ -11,15 +11,15 @@ import { User } from "../model/user.model.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
-;
 export const Auth = asyncHandler((req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { accessToken } = req.cookies;
     console.log(accessToken);
     if (!accessToken) {
         resp.status(401);
-        throw new Error("please provide token first");
+        throw new ApiError("please login first");
     }
-    const decodAccessToken = (jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE));
+    const decodAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE);
+    console.log("dd", decodAccessToken);
     if (!decodAccessToken) {
         resp.status(401);
         throw new Error("Invalid token");
@@ -29,6 +29,7 @@ export const Auth = asyncHandler((req, resp, next) => __awaiter(void 0, void 0, 
         resp.status(404);
         throw new ApiError("User not found");
     }
+    console.log("sora", findUser);
     req.user = findUser._id;
     next();
 }));

@@ -8,10 +8,12 @@ import {
 } from "../zodschema/user/user-signup.js";
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Schema } from "mongoose";
-import e, { CookieOptions } from "express";
+import  { Schema } from "mongoose";
+import  { CookieOptions } from "express";
 import { ApiError } from "../utils/ApiError.js";
 import { Address } from "../model/user-address-model.js";
+import { Cart } from "../model/cart-model.js";
+import jwt,{JwtPayload} from "jsonwebtoken";
 
 const generateAccessTokenAndRefreshToken = async (
   id: Schema.Types.ObjectId
@@ -222,7 +224,7 @@ export const userInfo=asyncHandler(async(req,resp)=>{
     throw new ApiError("please provide id")
   }
 
-  const findUser=await User.findById(_id)
+  const findUser=await User.findById(_id).populate('address')
 
   if(!findUser){
     throw new Error("user not found")
@@ -239,3 +241,78 @@ export const getAddress=asyncHandler(async(req,resp)=>{
 
   resp.status(200).json(new ApiResponse('',200,findAddress))
 })
+
+
+export const addToCart=asyncHandler(async (req,resp)=>{
+  const {productId,count}=req.body
+  const {_id}=req.user
+
+  if(!productId || !_id){
+    throw new ApiError("please provide required info")
+  }
+
+  const findOnCart=await Cart.findOne({product:productId,addedBy:_id})
+
+  if(findOnCart){
+    throw new ApiError("product already on cart")
+  }
+
+  const addOnCart=await Cart.create({
+    product:productId,
+    addedBy:_id,
+    productCount:count
+  })
+
+  resp.json(new ApiResponse("product added on cart",200,addOnCart))
+})
+
+
+export const getCartProducts=asyncHandler(async(req,resp)=>{
+  const{_id}=req.user
+
+  const findCart=await Cart.find({addedBy:_id}).populate('product')
+  console.log(findCart)
+
+  resp.json(new ApiResponse("",200,findCart))
+})
+
+
+export const deleteCartProduct=asyncHandler(async(req,resp)=>{
+  const {productId}=req.body
+
+  if(!productId){
+    throw new ApiError("please provide id")
+  }
+
+  const deleteCart=await Cart.findByIdAndDelete(productId)
+
+  if(!deleteCart){
+    throw new ApiError("faild to delete")
+  }
+
+  resp.json(new ApiResponse("product deleted from cart",200,null))
+})
+
+
+export const checkLogin=asyncHandler(async(req,resp)=>{
+  const {accessToken}=req.cookies
+
+  if(!accessToken){
+    throw new ApiError("")
+  }
+
+  const decodAccessToken=jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECRETE as string) as JwtPayload
+
+  if(!decodAccessToken){
+    throw new ApiError("Invalid token")
+  }
+
+  const findUser=await User.findById(decodAccessToken._id).select('-password -refreshToken')
+
+  if(!findUser){
+    throw new ApiError("User not found")
+  }
+
+  resp.json(new ApiResponse("",200,findUser))
+}
+)

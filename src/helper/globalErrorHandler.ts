@@ -4,7 +4,7 @@ import { MulterError } from "multer";
 import fs from "fs";
 
 export const globalErrorHandler = (err: ApiError, resp: Response) => {
-  console.log("error>>>", err);
+  // console.log("error>>>", err);
   if (err instanceof ApiError) {
     resp.status(err.statusCode).json({
       error: err.message,

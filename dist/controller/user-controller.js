@@ -14,6 +14,8 @@ import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Address } from "../model/user-address-model.js";
+import { Cart } from "../model/cart-model.js";
+import jwt from "jsonwebtoken";
 const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
     if (!userInfo) {
@@ -177,7 +179,7 @@ export const userInfo = asyncHandler((req, resp) => __awaiter(void 0, void 0, vo
     if (!_id) {
         throw new ApiError("please provide id");
     }
-    const findUser = yield User.findById(_id);
+    const findUser = yield User.findById(_id).populate('address');
     if (!findUser) {
         throw new Error("user not found");
     }
@@ -187,4 +189,53 @@ export const getAddress = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     const { _id } = req.user;
     const findAddress = yield Address.find({ addressOf: _id }).populate('addressOf');
     resp.status(200).json(new ApiResponse('', 200, findAddress));
+}));
+export const addToCart = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId, count } = req.body;
+    const { _id } = req.user;
+    if (!productId || !_id) {
+        throw new ApiError("please provide required info");
+    }
+    const findOnCart = yield Cart.findOne({ product: productId, addedBy: _id });
+    if (findOnCart) {
+        throw new ApiError("product already on cart");
+    }
+    const addOnCart = yield Cart.create({
+        product: productId,
+        addedBy: _id,
+        productCount: count
+    });
+    resp.json(new ApiResponse("product added on cart", 200, addOnCart));
+}));
+export const getCartProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { _id } = req.user;
+    const findCart = yield Cart.find({ addedBy: _id }).populate('product');
+    console.log(findCart);
+    resp.json(new ApiResponse("", 200, findCart));
+}));
+export const deleteCartProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId } = req.body;
+    if (!productId) {
+        throw new ApiError("please provide id");
+    }
+    const deleteCart = yield Cart.findByIdAndDelete(productId);
+    if (!deleteCart) {
+        throw new ApiError("faild to delete");
+    }
+    resp.json(new ApiResponse("product deleted from cart", 200, null));
+}));
+export const checkLogin = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { accessToken } = req.cookies;
+    if (!accessToken) {
+        throw new ApiError("");
+    }
+    const decodAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE);
+    if (!decodAccessToken) {
+        throw new ApiError("Invalid token");
+    }
+    const findUser = yield User.findById(decodAccessToken._id).select('-password -refreshToken');
+    if (!findUser) {
+        throw new ApiError("User not found");
+    }
+    resp.json(new ApiResponse("", 200, findUser));
 }));

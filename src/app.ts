@@ -6,12 +6,13 @@ import cors from 'cors'
 import { productRouter } from './route/user/product-route.js'
 import cookieParser from 'cookie-parser'
 import { sellerRoute } from './route/user/sellerr-route.js'
+import { paymentRoute } from './route/user/payment-route.js'
 
 export const app=express()
 
 app.use(express.json())
 app.use(cors({
-    origin:['http://localhost:5173','https://pasal-ecommerce-server.onrender.com'],
+    origin:['http://localhost:5173','http://localhost:5174','https://pasal-ecommerce-server.onrender.com'],
     credentials:true
 }))
 app.use(cookieParser())
@@ -19,6 +20,7 @@ app.use(cookieParser())
 app.use('/api/v1/user',userRouter)
 app.use('/api/v1/product',productRouter)
 app.use('/api/v1/seller',sellerRoute)
+app.use('/api/v1/payment',paymentRoute)
 app.use((err:ApiError,req:Request,resp:Response,next:NextFunction)=>{
     globalErrorHandler(err,resp)
 })

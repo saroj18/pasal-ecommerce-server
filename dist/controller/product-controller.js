@@ -7,12 +7,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { esewaOrderForm } from "../helper/esewaOrderForm.js";
+import { Cart } from "../model/cart-model.js";
+import { Order } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
+import { WishList } from "../model/wishlist-model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { deleteFromCloudinary, uploadImageOnCloudinary, } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
+import { createOrderHash } from "../utils/esewaOrderHash.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
 export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -139,4 +144,95 @@ export const updateProduct = asyncHandler((req, resp) => __awaiter(void 0, void 
     resp
         .status(200)
         .json(new ApiResponse("product updated successfully", 200, updateProduct));
+}));
+export const addOnWishlist = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId } = req.body;
+    const { _id } = req.user;
+    if (!productId || !_id) {
+        throw new ApiError("please provide id");
+    }
+    const findProduct = yield Product.findById(productId);
+    if (!findProduct) {
+        throw new ApiError("product not found");
+    }
+    const findOnWishList = yield WishList.findOne({
+        addedBy: _id,
+        product: productId,
+    });
+    if (findOnWishList) {
+        throw new ApiError("product already on wishlist");
+    }
+    const addOnWishList = yield WishList.create({
+        addedBy: _id,
+        product: productId,
+    });
+    if (!addOnWishList) {
+        throw new ApiError("faild to add on wishlist");
+    }
+    resp
+        .status(200)
+        .json(new ApiResponse("successfully added on wishlist", 200, addOnWishList));
+}));
+export const getWishListProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { _id } = req.user;
+    if (!_id) {
+        throw new ApiError("please provide id");
+    }
+    const findWishList = yield WishList.find({ addedBy: _id }).populate("product");
+    if (!findWishList) {
+        throw new ApiError("wishlist is empty");
+    }
+    resp.status(200).json(new ApiResponse("", 200, findWishList));
+}));
+export const deleteWishListProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId } = req.body;
+    const { _id } = req.user;
+    if (!productId || !_id) {
+        throw new ApiError("please provide required info");
+    }
+    const findOnWishList = yield WishList.findOneAndDelete({
+        addedBy: _id,
+        product: productId,
+    });
+    if (!findOnWishList) {
+        throw new ApiError("product not found");
+    }
+    resp
+        .status(200)
+        .json(new ApiResponse("product deleted successfully", 200, findOnWishList));
+}));
+export const wishListAndCartCount = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { _id } = req.user;
+    if (!_id) {
+        throw new ApiError("please provide id");
+    }
+    const wishListCount = yield WishList.find({ addedBy: _id }).countDocuments();
+    const cartCount = yield Cart.find({ addedBy: _id }).countDocuments();
+    resp.status(200).json(new ApiResponse("", 200, { wishListCount, cartCount }));
+}));
+export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { orderDetails } = req.body;
+    const { product, billingAddress, deleveryAddress, payMethod, totalPrice, deleveryCharge, } = orderDetails;
+    const { _id } = req.user;
+    console.log(totalPrice);
+    console.log(deleveryCharge);
+    if (!billingAddress ||
+        !deleveryAddress ||
+        !payMethod ||
+        !totalPrice ||
+        product.length < 1) {
+        throw new ApiError("please provide all details");
+    }
+    const order = yield Order.create({
+        product,
+        payMethod,
+        totalPrice,
+        billingAddress,
+        deleveryAddress,
+        purchaseBy: _id,
+        deleveryCharge,
+    });
+    const esewaHash = createOrderHash(order.totalPrice, order._id, deleveryCharge);
+    const orderData = yield esewaOrderForm(esewaHash, order.totalPrice, order._id, order.deleveryCharge);
+    resp.status(200).json(new ApiResponse("", 200, orderData));
 }));
