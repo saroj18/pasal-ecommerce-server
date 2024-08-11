@@ -34,11 +34,6 @@ const ShopSchema = new Schema({
         required: true,
         trim: true,
     },
-    ownerAddress: {
-        type: Schema.Types.ObjectId,
-        ref: "address",
-        required: true,
-    },
     shopAddress: {
         type: String,
         required: true,
@@ -46,7 +41,9 @@ const ShopSchema = new Schema({
     monthlyTurnover: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
     },
+}, {
+    timestamps: true,
 });
 export const Shop = mongoose.model("shop", ShopSchema);

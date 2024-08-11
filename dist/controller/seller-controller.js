@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { Shop } from "../model/shop-details-model.js";
 import { User } from "../model/user.model.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { uploadImageOnCloudinary } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
@@ -18,19 +18,18 @@ export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     var _a;
     const [yourImage, documentImage, shopImage] = req.files;
     const { shopDetails } = req.body;
-    const { shopName, shopAddress, category, turnover, citiNumber, shopLocation } = JSON.parse(shopDetails);
+    const { shopName, address, category, turnover, citiNumber, shopLocation } = JSON.parse(shopDetails);
     const { _id } = req === null || req === void 0 ? void 0 : req.user;
-    console.log(_id);
     const validateInfo = ShopVerifyZodSchema.safeParse({
         shopName,
-        shopAddress,
+        address,
         category,
         turnover,
         citiNumber,
         shopImage,
         documentImage,
         shopLocation,
-        yourImage
+        yourImage,
     });
     if (validateInfo.error) {
         const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
@@ -38,25 +37,24 @@ export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         return;
     }
     const uploadedImage = yield uploadImageOnCloudinary([shopImage, documentImage, yourImage], "sellerImages");
-    const findUser = yield User.findById(_id);
-    if (!findUser) {
-        throw new ApiError("user not found");
-    }
-    const saveOnDb = yield Shop.create({
+    yield Shop.create({
         shopName,
-        owner: findUser._id,
-        address: findUser.address,
+        owner: _id,
         category,
-        turnover,
+        monthlyTurnover: turnover,
         citiNumber,
         shopImage: uploadedImage[0],
         documentImage: uploadedImage[1],
-        shopLocation,
+        location: shopLocation,
         yourImage: uploadedImage[2],
-        shopAddress
+        shopAddress: address,
     });
-    if (!saveOnDb) {
-        throw new Error("faild to save on db");
+    const findUser = yield User.findById(_id);
+    if (findUser) {
+        findUser.shopVerify = true;
+        yield findUser.save();
     }
-    resp.status(200).json({ success: true, message: "successfully saved", data: saveOnDb });
+    resp
+        .status(200)
+        .json(new ApiResponse("Shop created successfully", 200, findUser));
 }));

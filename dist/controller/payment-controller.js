@@ -12,6 +12,7 @@ import { esewaStatusInfo } from "../helper/esewaStatusInfo.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Payment } from "../model/payment-model.js";
 import { Order } from "../model/order.model.js";
+import { ApiError } from "../utils/ApiError.js";
 const paymentInfo = {
     amount: "100",
     failure_url: "https://google.com",
@@ -27,7 +28,7 @@ const paymentInfo = {
 };
 export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.body;
-    const { _id } = req.user;
+    // const { _id } = req.user;
     console.log("finalToken", token);
     if (!token) {
         throw new Error("token is required");
@@ -36,22 +37,26 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
     const getStatusInfo = yield esewaStatusInfo(decodeToken);
     console.log("ttt", getStatusInfo);
     if (getStatusInfo.status != "COMPLETE") {
+        yield Order.findByIdAndDelete(getStatusInfo.transaction_uuid);
         resp
             .status(500)
             .json(new ApiResponse("failed to verify payment", 500, getStatusInfo));
         return;
     }
     const productOrder = yield Order.findByIdAndUpdate(getStatusInfo.transaction_uuid, {
-        set: {
+        $set: {
             paymentStatus: "complete",
         },
+    }, {
+        new: true,
     });
+    console.log("soraa>>>", productOrder);
+    if (!productOrder) {
+        throw new ApiError("there is no any orders");
+    }
     yield Payment.create({
-        product: productOrder === null || productOrder === void 0 ? void 0 : productOrder.product,
-        productPrice: getStatusInfo.total_amount,
+        order: productOrder,
         status: "COMPLETE",
-        payVia: productOrder === null || productOrder === void 0 ? void 0 : productOrder.payMethod,
-        payBy: productOrder === null || productOrder === void 0 ? void 0 : productOrder.purchaseBy,
         ref_id: getStatusInfo.ref_id,
     });
     resp.status(200).json(new ApiResponse("", 200, null));

@@ -34,11 +34,6 @@ const OrderSchema = new Schema({
         ref: "address",
         required: true,
     },
-    payment: {
-        type: Schema.Types.ObjectId,
-        ref: "payment",
-        default: null,
-    },
     totalPrice: {
         type: Number,
         required: true,

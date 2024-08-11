@@ -157,40 +157,65 @@ export const userVerifyZodSchema = z.object({
     .min(1, { message: "gender must be 1 character" }),
 });
 
+export const ShopVerifyZodSchema = z.object({
+  shopName: z
+    .string({
+      invalid_type_error: "invalid shopName",
+      required_error: "shopName required",
+    })
+    .trim()
+    .min(1, { message: "shopName must be 1 letter" }),
+  address: z
+    .string({
+      invalid_type_error: "invalid address",
+      required_error: "address required",
+    })
+    .trim()
+    .min(1, { message: "address must be 1 letter" }),
+  category: z
+    .string({
+      invalid_type_error: "invalid category",
+      required_error: "category required",
+    })
+    .trim()
+    .min(1, { message: "category must be 1 letter" }),
+  turnover: z
+    .string({
+      invalid_type_error: "invalid turnover",
+      required_error: "turnover required",
+    })
+    .trim()
+    .min(1, { message: "turnover must be 1 letter" }),
+  citiNumber: z
+    .string({
+      invalid_type_error: "invalid citiNumber",
+      required_error: "citiNumber required",
+    })
+    .trim()
+    .min(1, { message: "citiNumber must be 1 letter" }),
+  shopImage: z
+    .any()
+    .refine((val: any) => val != null, {
+      message: "1 images must be required",
+    }),
+  documentImage: z
+    .any()
+    .refine((val: any) => val != null, {
+      message: "1 images must be required",
+    }),
+  shopLocation: z
+    .any()
+    .refine((val: { [key: string]: number }) => val?.lat && val?.lng, {
+      message: "location must be required",
+    }),
+  yourImage: z
+    .any()
+    .refine((val: any) => val != null, {
+      message: "1 images must be required",
+    }),
+});
 
-export const ShopVerifyZodSchema=z.object({
-  shopName:z.string({
-    invalid_type_error:"invalid shopName",
-    required_error:"shopName required"
-  }).trim().min(1,{message:"shopName must be 1 letter"}),
-  shopAddress:z.string({
-    invalid_type_error:"invalid address",
-    required_error:"address required"
-  }).trim().min(1,{message:"address must be 1 letter"}),
-  owner:z.string({
-    invalid_type_error:"invalid owner",
-    required_error:"owner required"
-  }).trim().min(1,{message:"owner must be 1 letter"}),
-  category:z.string({
-    invalid_type_error:"invalid category",
-    required_error:"category required"
-  }).trim().min(1,{message:"category must be 1 letter"}),
-  turnover:z.string({
-    invalid_type_error:"invalid turnover",
-    required_error:"turnover required"
-  }).trim().min(1,{message:"turnover must be 1 letter"}),
-  citiNumber:z.string({
-    invalid_type_error:"invalid citiNumber",
-    required_error:"citiNumber required"
-  }).trim().min(1,{message:"citiNumber must be 1 letter"}),
-  shopImage:z.any().refine((val:any)=>val!=null,{message:"1 images must be required"}),
-  documentImage:z.any().refine((val:any)=>val!=null,{message:"1 images must be required"}),
-  shopLocation:z.any().refine((val:{[key:string]:number})=>val?.lat && val?.lng,{message:"location must be required"}),
-  yourImage:z.any().refine((val:any)=>val!=null,{message:"1 images must be required"})
-})
-
-
-export const UserAddressZodSchema=z.object({
+export const UserAddressZodSchema = z.object({
   state: z
     .string({
       required_error: "state must be required",
@@ -250,4 +275,4 @@ export const UserAddressZodSchema=z.object({
       invalid_type_error: "lng must be number",
     }),
   }),
-})
+});

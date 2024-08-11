@@ -18,6 +18,7 @@ interface Customer extends Document {
   generateRefreshToken: () => string;
   mobile:string
   dob:string
+  shopVerify:boolean
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -75,6 +76,10 @@ const UserSchema: Schema<Customer> = new Schema(
       type: String,
       default: null,
     },
+    shopVerify:{
+      type:Boolean,
+      default:false
+    }
   },
   {
     timestamps: true,

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addOnWishlist, addProduct, deleteProduct, deleteWishListProduct, getAllProducts, getInventoryOfProducts, getSingleProduct, getWishListProduct, updateProduct, wishListAndCartCount, } from "../../controller/product-controller.js";
+import { addOnWishlist, addProduct, deleteProduct, deleteWishListProduct, getAllMyProducts, getAllProducts, getInventoryOfProducts, getSingleProduct, getWishListProduct, updateProduct, wishListAndCartCount, } from "../../controller/product-controller.js";
 import { upload } from "../../middleware/multer.js";
 import { sellerAuth } from "../../middleware/sellerAuth.js";
 import { addToCart, deleteCartProduct, getCartProducts, } from "../../controller/user-controller.js";
@@ -11,6 +11,7 @@ productRouter
 productRouter.route("/inventory").get(sellerAuth, getInventoryOfProducts);
 productRouter.route("/cartandwishlist/count").get(Auth, wishListAndCartCount);
 productRouter.route("/").get(getAllProducts);
+productRouter.route("/myproduct").get(Auth, getAllMyProducts);
 productRouter
     .route("/cart")
     .post(Auth, addToCart)

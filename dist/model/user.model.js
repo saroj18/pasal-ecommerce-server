@@ -64,6 +64,10 @@ const UserSchema = new Schema({
         type: String,
         default: null,
     },
+    shopVerify: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true,
     validateBeforeSave: true,
