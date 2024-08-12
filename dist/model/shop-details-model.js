@@ -43,6 +43,16 @@ const ShopSchema = new Schema({
         required: true,
         trim: true,
     },
+    citiNumber: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    verified: {
+        type: Boolean,
+        default: false,
+        required: true,
+    },
 }, {
     timestamps: true,
 });

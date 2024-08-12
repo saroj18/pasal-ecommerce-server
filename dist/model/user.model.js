@@ -66,8 +66,8 @@ const UserSchema = new Schema({
     },
     shopVerify: {
         type: Boolean,
-        default: false
-    }
+        default: false,
+    },
 }, {
     timestamps: true,
     validateBeforeSave: true,
@@ -91,7 +91,7 @@ UserSchema.methods.generateAccessToken = function () {
         _id: this._id,
         email: this.email,
         username: this.username,
-        role: this.role
+        role: this.role,
     }, process.env.ACCESS_TOKEN_SECRETE, {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRY_TIME,
     });

@@ -16,6 +16,8 @@ interface ShopType extends Document {
   yourImage: string;
   monthlyTurnover: string;
   shopAddress: string;
+  verified: boolean;
+  citiNumber: string;
 }
 
 const ShopSchema: Schema<ShopType> = new Schema(
@@ -62,6 +64,16 @@ const ShopSchema: Schema<ShopType> = new Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    citiNumber: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
+      required: true,
     },
   },
   {

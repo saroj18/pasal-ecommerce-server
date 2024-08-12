@@ -9,6 +9,7 @@ import { sellerRoute } from "./route/user/sellerr-route.js";
 import { paymentRoute } from "./route/user/payment-route.js";
 import { orderRoute } from "./route/user/order-route.js";
 import { vendorRoute } from "./route/user/vendor-route.js";
+import { deleveryPersonRoute } from "./route/user/delevery-person-route.js";
 
 export const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/v1/seller", sellerRoute);
 app.use("/api/v1/payment", paymentRoute);
 app.use("/api/v1/order", orderRoute);
 app.use("/api/v1/vendor", vendorRoute);
+app.use("/api/v1/deleveryperson", deleveryPersonRoute);
 app.use((err: ApiError, req: Request, resp: Response, next: NextFunction) => {
   globalErrorHandler(err, resp);
 });

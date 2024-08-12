@@ -16,9 +16,9 @@ interface Customer extends Document {
   comparePassword: (password: string) => boolean;
   generateAccessToken: () => string;
   generateRefreshToken: () => string;
-  mobile:string
-  dob:string
-  shopVerify:boolean
+  mobile: string;
+  dob: string;
+  shopVerify: boolean;
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -76,16 +76,15 @@ const UserSchema: Schema<Customer> = new Schema(
       type: String,
       default: null,
     },
-    shopVerify:{
-      type:Boolean,
-      default:false
-    }
+    shopVerify: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
     validateBeforeSave: true,
   }
-  
 );
 
 UserSchema.pre("save", async function (next) {
@@ -106,7 +105,7 @@ UserSchema.methods.generateAccessToken = function () {
       _id: this._id,
       email: this.email,
       username: this.username,
-      role:this.role
+      role: this.role,
     },
     process.env.ACCESS_TOKEN_SECRETE as string,
     {
