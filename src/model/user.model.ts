@@ -19,6 +19,7 @@ interface Customer extends Document {
   mobile: string;
   dob: string;
   shopVerify: boolean;
+  buyProduct: Schema.Types.ObjectId;
 }
 
 const UserSchema: Schema<Customer> = new Schema(

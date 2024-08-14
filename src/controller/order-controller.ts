@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { createOrderHash } from "../utils/esewaOrderHash.js";
+import { ObjectId } from "mongodb";
 
 export const productOrder = asyncHandler(async (req, resp) => {
   const { orderDetails } = req.body;
@@ -51,18 +52,58 @@ export const productOrder = asyncHandler(async (req, resp) => {
     order.deleveryCharge
   );
 
+  console.log("sarojaryal", order.totalPrice);
+
   resp.status(200).json(new ApiResponse("", 200, orderData));
 });
 
 export const getMyOrder = asyncHandler(async (req, resp) => {
   const { _id } = req.user;
+  await Order.deleteMany({
+    $and: [{ purchaseBy: _id }, { orderComplete: false }],
+  });
 
   const myOrder = await Order.find({ purchaseBy: _id }).populate([
     { path: "deleveryAddress" },
     { path: "billingAddress" },
     { path: "purchaseBy" },
-    { path: "product" },
+    {
+      path: "product",
+      // populate: { path: "addedBy", populate: { path: "address" } },
+    },
+  ]);
+  resp.status(200).json(new ApiResponse("", 200, myOrder));
+});
+
+export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
+  console.log("idd", req.shopId);
+  const order = await Order.aggregate([
+    { $unwind: "$product" },
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "orderProducts",
+      },
+    },
+    {
+      $unwind: "$orderProducts",
+    },
+    {
+      $match: {
+        "orderProducts.addedBy": new ObjectId(req.shopId),
+      },
+    },
+    {
+      $lookup:{
+        from:"users",
+        localField:"purchaseBy",
+        foreignField:"_id",
+        as:"customer"
+      }
+    }
   ]);
 
-  resp.status(200).json(new ApiResponse("", 200, myOrder));
+  resp.status(200).json(new ApiResponse("", 200, order));
 });

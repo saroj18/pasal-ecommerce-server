@@ -12,7 +12,7 @@ interface TokenPayload extends JwtPayload {
 }
 
 export const sellerAuth = asyncHandler(async (req, resp, next) => {
-  const { accessToken } = req.cookies;
+  const { accessToken,shopId } = req.cookies;
   console.log(accessToken);
 
   if (!accessToken) {
@@ -41,5 +41,6 @@ export const sellerAuth = asyncHandler(async (req, resp, next) => {
     throw new ApiError("unauthorized request");
   }
   req.user = findUser._id;
+  req.shopId=shopId
   next();
 });

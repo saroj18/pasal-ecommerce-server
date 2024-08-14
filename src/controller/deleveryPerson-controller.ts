@@ -5,6 +5,8 @@ import { DeleveryPersonZodSchema } from "../zodschema/deleveryPerson/deleveryPer
 import { errorFormatter } from "../utils/errorFormater.js";
 import { DeleveryPerson } from "../model/delevery-person-model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
+import { ApiError } from "../utils/ApiError.js";
 
 export const addDeleveryPerson = asyncHandler(async (req, resp) => {
   const {
@@ -79,4 +81,17 @@ export const getDeleveryPerson = asyncHandler(async (req, resp) => {
     throw new Error("faild to get delevery person");
   }
   resp.status(200).json(new ApiResponse("", 200, deleveryPerson));
+});
+
+export const deleteDeleveryPerson = asyncHandler(async (req, resp) => {
+  const { id } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError("invalid credentials");
+  }
+  const deleveryPerson = await DeleveryPerson.findByIdAndDelete(id);
+  if (!deleveryPerson) {
+    throw new Error("faild to delete delevery person");
+  }
+  resp.status(200).json(new ApiResponse("successfully deleted", 200, null));
 });

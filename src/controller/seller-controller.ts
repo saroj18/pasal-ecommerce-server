@@ -38,7 +38,7 @@ export const shopVerify = asyncHandler(async (req, resp) => {
     "sellerImages"
   );
 
-  await Shop.create({
+  const addShop = await Shop.create({
     shopName,
     owner: _id,
     category,
@@ -56,6 +56,8 @@ export const shopVerify = asyncHandler(async (req, resp) => {
     findUser.shopVerify = true;
     await findUser.save();
   }
+
+  resp.cookie("shopId", addShop._id, { httpOnly: true, path: "/" });
 
   resp
     .status(200)

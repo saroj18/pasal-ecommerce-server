@@ -11,7 +11,10 @@ import fetch from "node-fetch";
 export const esewaStatusInfo = (token) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("uuid", token.transaction_uuid);
     console.log("amount", token.total_amount);
-    const resp = yield fetch(`https://uat.esewa.com.np/api/epay/transaction/status/?product_code=EPAYTEST&total_amount=${token.total_amount}&transaction_uuid=${token.transaction_uuid}`);
+    let formattedAmount = token.total_amount
+        .replace(/,/g, "")
+        .replace(/\.\d+$/, "");
+    const resp = yield fetch(`https://uat.esewa.com.np/api/epay/transaction/status/?product_code=EPAYTEST&total_amount=${formattedAmount}&transaction_uuid=${token.transaction_uuid}`);
     const respData = (yield resp.json());
     return respData;
 });

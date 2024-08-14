@@ -54,7 +54,9 @@ const productSchema = new Schema({
     },
     addedBy: {
         type: Schema.Types.ObjectId,
-        ref: "user",
+        ref: "shop",
     },
+}, {
+    timestamps: true,
 });
 export const Product = mongoose.model("product", productSchema);

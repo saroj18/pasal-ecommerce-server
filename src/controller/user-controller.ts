@@ -8,12 +8,15 @@ import {
 } from "../zodschema/user/user-signup.js";
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import  { Schema } from "mongoose";
-import  { CookieOptions } from "express";
+import { Schema } from "mongoose";
+import { CookieOptions } from "express";
 import { ApiError } from "../utils/ApiError.js";
 import { Address } from "../model/user-address-model.js";
 import { Cart } from "../model/cart-model.js";
-import jwt,{JwtPayload} from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { Order } from "../model/order.model.js";
+import { Shop } from "../model/shop-details-model.js";
+import { ObjectId } from "mongodb";
 
 const generateAccessTokenAndRefreshToken = async (
   id: Schema.Types.ObjectId
@@ -88,7 +91,7 @@ export const loginUser = asyncHandler(async (req, resp) => {
       findUser._id as Schema.Types.ObjectId
     );
 
-  await User.findByIdAndUpdate(findUser._id, { refreshToken });
+  const user = await User.findByIdAndUpdate(findUser._id, { refreshToken });
 
   const options: CookieOptions = {
     httpOnly: true,
@@ -97,7 +100,13 @@ export const loginUser = asyncHandler(async (req, resp) => {
     // sameSite: "none",
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
   };
-
+  if (user && user.shopVerify) {
+    const shop = await Shop.findOne({ owner: findUser._id });
+    if (!shop) {
+      throw new ApiError("shop not found");
+    }
+    resp.cookie("shopId", shop._id, options);
+  }
   resp.cookie("accessToken", accessToken, options);
   resp.cookie("refreshToken", refreshToken, options);
   resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
@@ -120,8 +129,8 @@ export const userVerify = asyncHandler(async (req, resp) => {
     location,
   } = req.body;
 
-  if(!email && !fullname){
-    const validateInfo=UserAddressZodSchema.safeParse({
+  if (!email && !fullname) {
+    const validateInfo = UserAddressZodSchema.safeParse({
       state,
       city,
       district,
@@ -129,8 +138,8 @@ export const userVerify = asyncHandler(async (req, resp) => {
       ward,
       nearBy,
       defaultAddress,
-      location
-    })
+      location,
+    });
 
     if (validateInfo.error) {
       const error = errorFormatter(validateInfo.error?.format());
@@ -147,15 +156,17 @@ export const userVerify = asyncHandler(async (req, resp) => {
       nearBy,
       defaultAddress,
       location,
-      addressOf:req.user._id
+      addressOf: req.user._id,
     });
-  
+
     if (!createAddress) {
       throw new ApiError("faild to save address");
     }
 
-    resp.status(200).json(new ApiResponse("successfully added address",200,createAddress))
-    return
+    resp
+      .status(200)
+      .json(new ApiResponse("successfully added address", 200, createAddress));
+    return;
   }
 
   const validateInfo = userVerifyZodSchema.safeParse({
@@ -180,14 +191,14 @@ export const userVerify = asyncHandler(async (req, resp) => {
     return;
   }
 
-  const findUser = await User.findOne({email, fullname });
+  const findUser = await User.findOne({ email, fullname });
 
   if (!findUser) {
     throw new ApiError("user not found");
   }
 
-  if(findUser?.verify){
-    throw new ApiError("Email already verified")
+  if (findUser?.verify) {
+    throw new ApiError("Email already verified");
   }
 
   const createAddress = await Address.create({
@@ -199,7 +210,7 @@ export const userVerify = asyncHandler(async (req, resp) => {
     nearBy,
     defaultAddress,
     location,
-    addressOf:req.user._id
+    addressOf: req.user._id,
   });
 
   if (!createAddress) {
@@ -216,103 +227,152 @@ export const userVerify = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("successfully verify", 200, null));
 });
 
+export const userInfo = asyncHandler(async (req, resp) => {
+  const { _id } = req.user;
 
-export const userInfo=asyncHandler(async(req,resp)=>{
-  const{_id}=req.user
-
-  if(!_id){
-    throw new ApiError("please provide id")
+  if (!_id) {
+    throw new ApiError("please provide id");
   }
 
-  const findUser=await User.findById(_id).populate('address')
+  const findUser = await User.findById(_id).populate("address");
 
-  if(!findUser){
-    throw new Error("user not found")
+  if (!findUser) {
+    throw new Error("user not found");
   }
 
-  resp.status(200).json(new ApiResponse("",200,findUser))
-})
+  resp.status(200).json(new ApiResponse("", 200, findUser));
+});
 
+export const getAddress = asyncHandler(async (req, resp) => {
+  const { _id } = req.user;
 
-export const getAddress=asyncHandler(async(req,resp)=>{
-  const {_id} =req.user
+  const findAddress = await Address.find({ addressOf: _id }).populate(
+    "addressOf"
+  );
 
-  const findAddress=await Address.find({addressOf:_id}).populate('addressOf')
+  resp.status(200).json(new ApiResponse("", 200, findAddress));
+});
 
-  resp.status(200).json(new ApiResponse('',200,findAddress))
-})
+export const addToCart = asyncHandler(async (req, resp) => {
+  const { productId, count } = req.body;
+  const { _id } = req.user;
 
-
-export const addToCart=asyncHandler(async (req,resp)=>{
-  const {productId,count}=req.body
-  const {_id}=req.user
-
-  if(!productId || !_id){
-    throw new ApiError("please provide required info")
+  if (!productId || !_id) {
+    throw new ApiError("please provide required info");
   }
 
-  const findOnCart=await Cart.findOne({product:productId,addedBy:_id})
+  const findOnCart = await Cart.findOne({ product: productId, addedBy: _id });
 
-  if(findOnCart){
-    throw new ApiError("product already on cart")
+  if (findOnCart) {
+    throw new ApiError("product already on cart");
   }
 
-  const addOnCart=await Cart.create({
-    product:productId,
-    addedBy:_id,
-    productCount:count
-  })
+  const addOnCart = await Cart.create({
+    product: productId,
+    addedBy: _id,
+    productCount: count,
+  });
 
-  resp.json(new ApiResponse("product added on cart",200,addOnCart))
-})
+  resp.json(new ApiResponse("product added on cart", 200, addOnCart));
+});
 
+export const getCartProducts = asyncHandler(async (req, resp) => {
+  const { _id } = req.user;
 
-export const getCartProducts=asyncHandler(async(req,resp)=>{
-  const{_id}=req.user
+  const findCart = await Cart.find({ addedBy: _id }).populate("product");
+  console.log(findCart);
 
-  const findCart=await Cart.find({addedBy:_id}).populate('product')
-  console.log(findCart)
+  resp.json(new ApiResponse("", 200, findCart));
+});
 
-  resp.json(new ApiResponse("",200,findCart))
-})
+export const deleteCartProduct = asyncHandler(async (req, resp) => {
+  const { productId } = req.body;
 
-
-export const deleteCartProduct=asyncHandler(async(req,resp)=>{
-  const {productId}=req.body
-
-  if(!productId){
-    throw new ApiError("please provide id")
+  if (!productId) {
+    throw new ApiError("please provide id");
   }
 
-  const deleteCart=await Cart.findByIdAndDelete(productId)
+  const deleteCart = await Cart.findByIdAndDelete(productId);
 
-  if(!deleteCart){
-    throw new ApiError("faild to delete")
+  if (!deleteCart) {
+    throw new ApiError("faild to delete");
   }
 
-  resp.json(new ApiResponse("product deleted from cart",200,null))
-})
+  resp.json(new ApiResponse("product deleted from cart", 200, null));
+});
 
+export const checkLogin = asyncHandler(async (req, resp) => {
+  const { accessToken } = req.cookies;
 
-export const checkLogin=asyncHandler(async(req,resp)=>{
-  const {accessToken}=req.cookies
-
-  if(!accessToken){
-    throw new ApiError("")
+  if (!accessToken) {
+    throw new ApiError("");
   }
 
-  const decodAccessToken=jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECRETE as string) as JwtPayload
+  const decodAccessToken = jwt.verify(
+    accessToken,
+    process.env.ACCESS_TOKEN_SECRETE as string
+  ) as JwtPayload;
 
-  if(!decodAccessToken){
-    throw new ApiError("Invalid token")
+  if (!decodAccessToken) {
+    throw new ApiError("Invalid token");
   }
 
-  const findUser=await User.findById(decodAccessToken._id).select('-password -refreshToken')
+  const findUser = await User.findById(decodAccessToken._id).select(
+    "-password -refreshToken"
+  );
 
-  if(!findUser){
-    throw new ApiError("User not found")
+  if (!findUser) {
+    throw new ApiError("User not found");
   }
 
-  resp.json(new ApiResponse("",200,findUser))
-}
-)
+  resp.json(new ApiResponse("", 200, findUser));
+});
+
+export const getAllCustomerUser = asyncHandler(async (req, resp) => {
+  const findUser = await User.find({ role: "customer" }).populate("address");
+
+  resp.status(200).json(new ApiResponse("", 200, findUser));
+});
+
+export const getMyAllCustomerForSeller = asyncHandler(async (req, resp) => {
+
+  const user = await Order.aggregate([
+    { $unwind: "$product" },
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "productList",
+      },
+    },
+    { $unwind: "$productList" },
+    {
+      $lookup: {
+        from: "shops",
+        localField: "productList.addedBy",
+        foreignField: "_id",
+        as: "ShopDetails",
+      },
+    },
+    {
+      $unwind: "$ShopDetails",
+    },
+    {
+      $match: { "ShopDetails._id": new ObjectId(req.shopId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "purchaseBy",
+        foreignField: "_id",
+        as: "customer",
+      },
+    },
+    {
+      $unwind: "$customer",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, user));
+});

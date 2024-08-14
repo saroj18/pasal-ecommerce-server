@@ -37,7 +37,7 @@ export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         return;
     }
     const uploadedImage = yield uploadImageOnCloudinary([shopImage, documentImage, yourImage], "sellerImages");
-    yield Shop.create({
+    const addShop = yield Shop.create({
         shopName,
         owner: _id,
         category,
@@ -54,6 +54,7 @@ export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         findUser.shopVerify = true;
         yield findUser.save();
     }
+    resp.cookie("shopId", addShop._id, { httpOnly: true, path: "/" });
     resp
         .status(200)
         .json(new ApiResponse("Shop created successfully", 200, findUser));

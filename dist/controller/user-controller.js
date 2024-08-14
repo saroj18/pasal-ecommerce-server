@@ -16,6 +16,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { Address } from "../model/user-address-model.js";
 import { Cart } from "../model/cart-model.js";
 import jwt from "jsonwebtoken";
+import { Order } from "../model/order.model.js";
+import { Shop } from "../model/shop-details-model.js";
+import { ObjectId } from "mongodb";
 const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
     if (!userInfo) {
@@ -77,7 +80,7 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     findUser.role = role;
     yield findUser.save();
     const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser._id);
-    yield User.findByIdAndUpdate(findUser._id, { refreshToken });
+    const user = yield User.findByIdAndUpdate(findUser._id, { refreshToken });
     const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -85,6 +88,13 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
         // sameSite: "none",
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     };
+    if (user && user.shopVerify) {
+        const shop = yield Shop.findOne({ owner: findUser._id });
+        if (!shop) {
+            throw new ApiError("shop not found");
+        }
+        resp.cookie("shopId", shop._id, options);
+    }
     resp.cookie("accessToken", accessToken, options);
     resp.cookie("refreshToken", refreshToken, options);
     resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
@@ -101,7 +111,7 @@ export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
             ward,
             nearBy,
             defaultAddress,
-            location
+            location,
         });
         if (validateInfo.error) {
             const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
@@ -117,12 +127,14 @@ export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
             nearBy,
             defaultAddress,
             location,
-            addressOf: req.user._id
+            addressOf: req.user._id,
         });
         if (!createAddress) {
             throw new ApiError("faild to save address");
         }
-        resp.status(200).json(new ApiResponse("successfully added address", 200, createAddress));
+        resp
+            .status(200)
+            .json(new ApiResponse("successfully added address", 200, createAddress));
         return;
     }
     const validateInfo = userVerifyZodSchema.safeParse({
@@ -161,7 +173,7 @@ export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         nearBy,
         defaultAddress,
         location,
-        addressOf: req.user._id
+        addressOf: req.user._id,
     });
     if (!createAddress) {
         throw new ApiError("faild to save address");
@@ -179,7 +191,7 @@ export const userInfo = asyncHandler((req, resp) => __awaiter(void 0, void 0, vo
     if (!_id) {
         throw new ApiError("please provide id");
     }
-    const findUser = yield User.findById(_id).populate('address');
+    const findUser = yield User.findById(_id).populate("address");
     if (!findUser) {
         throw new Error("user not found");
     }
@@ -187,8 +199,8 @@ export const userInfo = asyncHandler((req, resp) => __awaiter(void 0, void 0, vo
 }));
 export const getAddress = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { _id } = req.user;
-    const findAddress = yield Address.find({ addressOf: _id }).populate('addressOf');
-    resp.status(200).json(new ApiResponse('', 200, findAddress));
+    const findAddress = yield Address.find({ addressOf: _id }).populate("addressOf");
+    resp.status(200).json(new ApiResponse("", 200, findAddress));
 }));
 export const addToCart = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId, count } = req.body;
@@ -203,13 +215,13 @@ export const addToCart = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     const addOnCart = yield Cart.create({
         product: productId,
         addedBy: _id,
-        productCount: count
+        productCount: count,
     });
     resp.json(new ApiResponse("product added on cart", 200, addOnCart));
 }));
 export const getCartProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { _id } = req.user;
-    const findCart = yield Cart.find({ addedBy: _id }).populate('product');
+    const findCart = yield Cart.find({ addedBy: _id }).populate("product");
     console.log(findCart);
     resp.json(new ApiResponse("", 200, findCart));
 }));
@@ -233,9 +245,53 @@ export const checkLogin = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     if (!decodAccessToken) {
         throw new ApiError("Invalid token");
     }
-    const findUser = yield User.findById(decodAccessToken._id).select('-password -refreshToken');
+    const findUser = yield User.findById(decodAccessToken._id).select("-password -refreshToken");
     if (!findUser) {
         throw new ApiError("User not found");
     }
     resp.json(new ApiResponse("", 200, findUser));
+}));
+export const getAllCustomerUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const findUser = yield User.find({ role: "customer" }).populate("address");
+    resp.status(200).json(new ApiResponse("", 200, findUser));
+}));
+export const getMyAllCustomerForSeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield Order.aggregate([
+        { $unwind: "$product" },
+        {
+            $lookup: {
+                from: "products",
+                localField: "product",
+                foreignField: "_id",
+                as: "productList",
+            },
+        },
+        { $unwind: "$productList" },
+        {
+            $lookup: {
+                from: "shops",
+                localField: "productList.addedBy",
+                foreignField: "_id",
+                as: "ShopDetails",
+            },
+        },
+        {
+            $unwind: "$ShopDetails",
+        },
+        {
+            $match: { "ShopDetails._id": new ObjectId(req.shopId) },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "purchaseBy",
+                foreignField: "_id",
+                as: "customer",
+            },
+        },
+        {
+            $unwind: "$customer",
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, user));
 }));

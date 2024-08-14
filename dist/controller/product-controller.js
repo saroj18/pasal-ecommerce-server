@@ -20,7 +20,6 @@ export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     var _a;
     const { name, description, brand, barganing, chating, stock, category, features, price, discount, } = JSON.parse(req.body.productInfo);
     const images = req.files;
-    console.log(images);
     const validateInfo = ProductZodSchema.safeParse({
         name,
         description,
@@ -52,7 +51,7 @@ export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         price,
         discount,
         images: uploadOnCloudinary,
-        addedBy: req.user._id,
+        addedBy: req.shopId,
     });
     if (!saveProductOnDb) {
         throw new Error("faild to save on db");
@@ -62,11 +61,11 @@ export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         .json(new ApiResponse("successfully added product", 200, saveProductOnDb));
 }));
 export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const { _id } = req.user;
-    if (!_id) {
+    const id = req.shopId;
+    if (!id) {
         throw new ApiError("you are unauthorized person");
     }
-    const findProducts = yield Product.find({ addedBy: _id }).populate({
+    const findProducts = yield Product.find({ addedBy: id }).populate({
         path: "addedBy",
         select: "-refreshToken -password",
     });
@@ -82,7 +81,7 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
 }));
 export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const findProduct = yield Product.findById(id);
+    const findProduct = yield Product.findById(id).populate("addedBy");
     if (!findProduct) {
         throw new ApiError("product not found");
     }
@@ -208,7 +207,7 @@ export const wishListAndCartCount = asyncHandler((req, resp) => __awaiter(void 0
     resp.status(200).json(new ApiResponse("", 200, { wishListCount, cartCount }));
 }));
 export const getAllMyProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const { _id } = req.user;
-    const findProduct = yield Product.find({ addedBy: _id });
+    const id = req.shopId;
+    const findProduct = yield Product.find({ addedBy: id });
     resp.json(new ApiResponse("", 200, findProduct));
 }));

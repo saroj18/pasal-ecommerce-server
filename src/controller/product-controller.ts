@@ -26,7 +26,6 @@ export const addProduct = asyncHandler(async (req, resp) => {
     discount,
   } = JSON.parse(req.body.productInfo);
   const images = req.files as Express.Multer.File[];
-  console.log(images);
 
   const validateInfo = ProductZodSchema.safeParse({
     name,
@@ -61,7 +60,7 @@ export const addProduct = asyncHandler(async (req, resp) => {
     price,
     discount,
     images: uploadOnCloudinary,
-    addedBy: req.user._id,
+    addedBy: req.shopId,
   });
 
   if (!saveProductOnDb) {
@@ -74,13 +73,13 @@ export const addProduct = asyncHandler(async (req, resp) => {
 });
 
 export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
-  const { _id } = req.user;
+  const id = req.shopId;
 
-  if (!_id) {
+  if (!id) {
     throw new ApiError("you are unauthorized person");
   }
 
-  const findProducts = await Product.find({ addedBy: _id }).populate({
+  const findProducts = await Product.find({ addedBy: id }).populate({
     path: "addedBy",
     select: "-refreshToken -password",
   });
@@ -101,7 +100,7 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
 export const getSingleProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
 
-  const findProduct = await Product.findById(id);
+  const findProduct = await Product.findById(id).populate("addedBy");
 
   if (!findProduct) {
     throw new ApiError("product not found");
@@ -278,9 +277,9 @@ export const wishListAndCartCount = asyncHandler(async (req, resp) => {
 });
 
 export const getAllMyProducts = asyncHandler(async (req, resp) => {
-  const { _id } = req.user;
+  const id = req.shopId;
 
-  const findProduct = await Product.find({ addedBy: _id });
+  const findProduct = await Product.find({ addedBy: id });
 
   resp.json(new ApiResponse("", 200, findProduct));
 });

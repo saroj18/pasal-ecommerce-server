@@ -13,6 +13,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { createOrderHash } from "../utils/esewaOrderHash.js";
+import { ObjectId } from "mongodb";
 export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderDetails } = req.body;
     const { product, billingAddress, deleveryAddress, payMethod, totalPrice, deleveryCharge, } = orderDetails;
@@ -35,15 +36,53 @@ export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
     });
     const esewaHash = createOrderHash(order.totalPrice, order._id, deleveryCharge);
     const orderData = yield esewaOrderForm(esewaHash, order.totalPrice, order._id, order.deleveryCharge);
+    console.log("sarojaryal", order.totalPrice);
     resp.status(200).json(new ApiResponse("", 200, orderData));
 }));
 export const getMyOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { _id } = req.user;
+    yield Order.deleteMany({
+        $and: [{ purchaseBy: _id }, { orderComplete: false }],
+    });
     const myOrder = yield Order.find({ purchaseBy: _id }).populate([
         { path: "deleveryAddress" },
         { path: "billingAddress" },
         { path: "purchaseBy" },
-        { path: "product" },
+        {
+            path: "product",
+            // populate: { path: "addedBy", populate: { path: "address" } },
+        },
     ]);
     resp.status(200).json(new ApiResponse("", 200, myOrder));
+}));
+export const getMyOrderForSeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("idd", req.shopId);
+    const order = yield Order.aggregate([
+        { $unwind: "$product" },
+        {
+            $lookup: {
+                from: "products",
+                localField: "product",
+                foreignField: "_id",
+                as: "orderProducts",
+            },
+        },
+        {
+            $unwind: "$orderProducts",
+        },
+        {
+            $match: {
+                "orderProducts.addedBy": new ObjectId(req.shopId),
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "purchaseBy",
+                foreignField: "_id",
+                as: "customer"
+            }
+        }
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, order));
 }));

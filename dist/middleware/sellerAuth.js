@@ -12,7 +12,7 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 export const sellerAuth = asyncHandler((req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { accessToken } = req.cookies;
+    const { accessToken, shopId } = req.cookies;
     console.log(accessToken);
     if (!accessToken) {
         resp.status(401);
@@ -33,5 +33,6 @@ export const sellerAuth = asyncHandler((req, resp, next) => __awaiter(void 0, vo
         throw new ApiError("unauthorized request");
     }
     req.user = findUser._id;
+    req.shopId = shopId;
     next();
 }));
