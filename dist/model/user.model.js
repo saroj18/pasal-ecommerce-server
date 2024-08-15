@@ -68,6 +68,14 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    signUpAs: {
+        type: String,
+        trim: true,
+    },
+    block: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true,
     validateBeforeSave: true,

@@ -56,6 +56,7 @@ export const signUpUser = asyncHandler(async (req, resp) => {
     email,
     role,
     fullname,
+    signUpAs: role,
   });
   if (!saveOnDb) {
     throw new Error("faild to save on db");
@@ -74,6 +75,9 @@ export const loginUser = asyncHandler(async (req, resp) => {
   }
 
   const findUser = await User.findOne({ email });
+  if (findUser?.block) {
+    throw new ApiError("You are blocked by Admin");
+  }
   if (!findUser) {
     throw new ApiError("User not found");
   }
@@ -335,7 +339,6 @@ export const getAllCustomerUser = asyncHandler(async (req, resp) => {
 });
 
 export const getMyAllCustomerForSeller = asyncHandler(async (req, resp) => {
-
   const user = await Order.aggregate([
     { $unwind: "$product" },
     {
@@ -375,4 +378,37 @@ export const getMyAllCustomerForSeller = asyncHandler(async (req, resp) => {
   ]);
 
   resp.status(200).json(new ApiResponse("", 200, user));
+});
+
+export const getUser = asyncHandler(async (req, resp) => {
+  const { id } = req.params;
+  const user = await User.findOne({ _id: id }).populate("address");
+  resp.status(200).json(new ApiResponse("", 200, user));
+});
+
+export const blockUserByAdmin = asyncHandler(async (req, resp) => {
+  const { id } = req.body;
+
+  const data = await User.findByIdAndUpdate(id, {
+    $set: {
+      block: true,
+    },
+    new: true,
+  });
+
+  resp.status(200).json(new ApiResponse("user blocked successfully",200, data));
+});
+
+
+export const unBlockUserByAdmin = asyncHandler(async (req, resp) => {
+  const { id } = req.body;
+
+  const data = await User.findByIdAndUpdate(id, {
+    $set: {
+      block: false,
+    },
+    new: true,
+  });
+
+  resp.status(200).json(new ApiResponse("user unBlocked successfully",200, data));
 });

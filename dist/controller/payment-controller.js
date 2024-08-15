@@ -13,6 +13,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Payment } from "../model/payment-model.js";
 import { Order } from "../model/order.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { ObjectId } from "mongodb";
 export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.body;
     // const { _id } = req.user;
@@ -46,4 +47,57 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
         ref_id: getStatusInfo.ref_id,
     });
     resp.status(200).json(new ApiResponse("", 200, null));
+}));
+export const getPaymentHistory = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.query;
+    if (!id) {
+        throw new ApiError("please provide id");
+    }
+    const payment = yield Payment.aggregate([
+        {
+            $unwind: "$order",
+        },
+        {
+            $lookup: {
+                from: "orders",
+                localField: "order",
+                foreignField: "_id",
+                as: "orders",
+            },
+        },
+        {
+            $unwind: "$orders",
+        },
+        {
+            $match: {
+                "orders.purchaseBy": new ObjectId(id),
+            },
+        },
+        {
+            $unwind: "$orders.product",
+        },
+        {
+            $lookup: {
+                from: "products",
+                localField: "orders.product",
+                foreignField: "_id",
+                as: "products",
+            },
+        },
+        {
+            $unwind: "$products",
+        },
+        {
+            $lookup: {
+                from: "shops",
+                localField: "products.addedBy",
+                foreignField: "_id",
+                as: "shop",
+            },
+        },
+        {
+            $unwind: "$shop",
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, payment));
 }));

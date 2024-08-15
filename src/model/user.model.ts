@@ -20,6 +20,8 @@ interface Customer extends Document {
   dob: string;
   shopVerify: boolean;
   buyProduct: Schema.Types.ObjectId;
+  signUpAs: string;
+  block: boolean;
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -78,6 +80,14 @@ const UserSchema: Schema<Customer> = new Schema(
       default: null,
     },
     shopVerify: {
+      type: Boolean,
+      default: false,
+    },
+    signUpAs: {
+      type: String,
+      trim: true,
+    },
+    block: {
       type: Boolean,
       default: false,
     },

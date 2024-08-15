@@ -54,6 +54,7 @@ export const signUpUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         email,
         role,
         fullname,
+        signUpAs: role,
     });
     if (!saveOnDb) {
         throw new Error("faild to save on db");
@@ -70,6 +71,9 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
         return;
     }
     const findUser = yield User.findOne({ email });
+    if (findUser === null || findUser === void 0 ? void 0 : findUser.block) {
+        throw new ApiError("You are blocked by Admin");
+    }
     if (!findUser) {
         throw new ApiError("User not found");
     }
@@ -294,4 +298,29 @@ export const getMyAllCustomerForSeller = asyncHandler((req, resp) => __awaiter(v
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, user));
+}));
+export const getUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const user = yield User.findOne({ _id: id }).populate("address");
+    resp.status(200).json(new ApiResponse("", 200, user));
+}));
+export const blockUserByAdmin = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.body;
+    const data = yield User.findByIdAndUpdate(id, {
+        $set: {
+            block: true,
+        },
+        new: true,
+    });
+    resp.status(200).json(new ApiResponse("user blocked successfully", 200, data));
+}));
+export const unBlockUserByAdmin = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.body;
+    const data = yield User.findByIdAndUpdate(id, {
+        $set: {
+            block: false,
+        },
+        new: true,
+    });
+    resp.status(200).json(new ApiResponse("user unBlocked successfully", 200, data));
 }));

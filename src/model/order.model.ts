@@ -6,6 +6,7 @@ export interface OrderType extends Document {
   deleveryAddress: Schema.Types.ObjectId;
   paymentStatus: string;
   payMethod: string;
+  status: string;
   orderComplete: boolean;
   billingAddress: Schema.Types.ObjectId;
   totalPrice: number;
@@ -54,6 +55,10 @@ const OrderSchema: Schema<OrderType> = new Schema(
     },
     deleveryCharge: {
       type: Number,
+      required: true,
+    },
+    status: {
+      type: String,
       required: true,
     },
   },

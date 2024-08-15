@@ -37,6 +37,7 @@ export const productOrder = asyncHandler(async (req, resp) => {
     deleveryAddress,
     purchaseBy: _id,
     deleveryCharge,
+    status: "pending",
   });
 
   const esewaHash = createOrderHash(
@@ -75,6 +76,24 @@ export const getMyOrder = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, myOrder));
 });
 
+export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
+  const { id } = req.params;
+  await Order.deleteMany({
+    $and: [{ purchaseBy: id }, { orderComplete: false }],
+  });
+
+  const myOrder = await Order.find({ purchaseBy: id }).populate([
+    { path: "deleveryAddress" },
+    { path: "billingAddress" },
+    { path: "purchaseBy" },
+    {
+      path: "product",
+      // populate: { path: "addedBy", populate: { path: "address" } },
+    },
+  ]);
+  resp.status(200).json(new ApiResponse("", 200, myOrder));
+});
+
 export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
   console.log("idd", req.shopId);
   const order = await Order.aggregate([
@@ -96,13 +115,13 @@ export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
       },
     },
     {
-      $lookup:{
-        from:"users",
-        localField:"purchaseBy",
-        foreignField:"_id",
-        as:"customer"
-      }
-    }
+      $lookup: {
+        from: "users",
+        localField: "purchaseBy",
+        foreignField: "_id",
+        as: "customer",
+      },
+    },
   ]);
 
   resp.status(200).json(new ApiResponse("", 200, order));

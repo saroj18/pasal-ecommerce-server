@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Payment } from "../model/payment-model.js";
 import { Order } from "../model/order.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { ObjectId } from "mongodb";
 
 export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   const { token } = req.body;
@@ -50,4 +51,59 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
     ref_id: getStatusInfo.ref_id,
   });
   resp.status(200).json(new ApiResponse("", 200, null));
+});
+
+export const getPaymentHistory = asyncHandler(async (req, resp) => {
+  const { id } = req.query;
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+  const payment = await Payment.aggregate([
+    {
+      $unwind: "$order",
+    },
+    {
+      $lookup: {
+        from: "orders",
+        localField: "order",
+        foreignField: "_id",
+        as: "orders",
+      },
+    },
+    {
+      $unwind: "$orders",
+    },
+    {
+      $match: {
+        "orders.purchaseBy": new ObjectId(id as string),
+      },
+    },
+    {
+      $unwind: "$orders.product",
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "orders.product",
+        foreignField: "_id",
+        as: "products",
+      },
+    },
+    {
+      $unwind: "$products",
+    },
+    {
+      $lookup: {
+        from: "shops",
+        localField: "products.addedBy",
+        foreignField: "_id",
+        as: "shop",
+      },
+    },
+    {
+      $unwind: "$shop",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, payment));
 });

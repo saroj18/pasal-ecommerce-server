@@ -33,6 +33,7 @@ export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
         deleveryAddress,
         purchaseBy: _id,
         deleveryCharge,
+        status: "pending",
     });
     const esewaHash = createOrderHash(order.totalPrice, order._id, deleveryCharge);
     const orderData = yield esewaOrderForm(esewaHash, order.totalPrice, order._id, order.deleveryCharge);
@@ -45,6 +46,22 @@ export const getMyOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         $and: [{ purchaseBy: _id }, { orderComplete: false }],
     });
     const myOrder = yield Order.find({ purchaseBy: _id }).populate([
+        { path: "deleveryAddress" },
+        { path: "billingAddress" },
+        { path: "purchaseBy" },
+        {
+            path: "product",
+            // populate: { path: "addedBy", populate: { path: "address" } },
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, myOrder));
+}));
+export const getMyOrderForAdmin = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    yield Order.deleteMany({
+        $and: [{ purchaseBy: id }, { orderComplete: false }],
+    });
+    const myOrder = yield Order.find({ purchaseBy: id }).populate([
         { path: "deleveryAddress" },
         { path: "billingAddress" },
         { path: "purchaseBy" },
@@ -80,9 +97,9 @@ export const getMyOrderForSeller = asyncHandler((req, resp) => __awaiter(void 0,
                 from: "users",
                 localField: "purchaseBy",
                 foreignField: "_id",
-                as: "customer"
-            }
-        }
+                as: "customer",
+            },
+        },
     ]);
     resp.status(200).json(new ApiResponse("", 200, order));
 }));

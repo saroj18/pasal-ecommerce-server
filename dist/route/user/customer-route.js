@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkLogin, getAddress, getAllCustomerUser, getMyAllCustomerForSeller, loginUser, signUpUser, userInfo, userVerify, } from "../../controller/user-controller.js";
+import { blockUserByAdmin, checkLogin, getAddress, getAllCustomerUser, getMyAllCustomerForSeller, getUser, loginUser, signUpUser, unBlockUserByAdmin, userInfo, userVerify, } from "../../controller/user-controller.js";
 import { Auth } from "../../middleware/auth.js";
 import { sellerAuth } from "../../middleware/sellerAuth.js";
 export const userRouter = Router();
@@ -11,3 +11,6 @@ userRouter.route("/address").get(Auth, getAddress);
 userRouter.route("/checklogin").get(checkLogin);
 userRouter.route("/allcustomer").get(getAllCustomerUser);
 userRouter.route("/allmycustomer").get(sellerAuth, getMyAllCustomerForSeller);
+userRouter.route("/block").post(Auth, blockUserByAdmin);
+userRouter.route("/unblock").post(Auth, unBlockUserByAdmin);
+userRouter.route("/:id").get(Auth, getUser);
