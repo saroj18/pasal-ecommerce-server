@@ -256,7 +256,7 @@ export const checkLogin = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     resp.json(new ApiResponse("", 200, findUser));
 }));
 export const getAllCustomerUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const findUser = yield User.find({ role: "customer" }).populate("address");
+    const findUser = yield User.find().populate("address");
     resp.status(200).json(new ApiResponse("", 200, findUser));
 }));
 export const getMyAllCustomerForSeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
@@ -312,7 +312,9 @@ export const blockUserByAdmin = asyncHandler((req, resp) => __awaiter(void 0, vo
         },
         new: true,
     });
-    resp.status(200).json(new ApiResponse("user blocked successfully", 200, data));
+    resp
+        .status(200)
+        .json(new ApiResponse("user blocked successfully", 200, data));
 }));
 export const unBlockUserByAdmin = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.body;
@@ -322,5 +324,7 @@ export const unBlockUserByAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
         },
         new: true,
     });
-    resp.status(200).json(new ApiResponse("user unBlocked successfully", 200, data));
+    resp
+        .status(200)
+        .json(new ApiResponse("user unBlocked successfully", 200, data));
 }));

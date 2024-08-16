@@ -333,7 +333,7 @@ export const checkLogin = asyncHandler(async (req, resp) => {
 });
 
 export const getAllCustomerUser = asyncHandler(async (req, resp) => {
-  const findUser = await User.find({ role: "customer" }).populate("address");
+  const findUser = await User.find().populate("address");
 
   resp.status(200).json(new ApiResponse("", 200, findUser));
 });
@@ -396,9 +396,10 @@ export const blockUserByAdmin = asyncHandler(async (req, resp) => {
     new: true,
   });
 
-  resp.status(200).json(new ApiResponse("user blocked successfully",200, data));
+  resp
+    .status(200)
+    .json(new ApiResponse("user blocked successfully", 200, data));
 });
-
 
 export const unBlockUserByAdmin = asyncHandler(async (req, resp) => {
   const { id } = req.body;
@@ -410,5 +411,7 @@ export const unBlockUserByAdmin = asyncHandler(async (req, resp) => {
     new: true,
   });
 
-  resp.status(200).json(new ApiResponse("user unBlocked successfully",200, data));
+  resp
+    .status(200)
+    .json(new ApiResponse("user unBlocked successfully", 200, data));
 });

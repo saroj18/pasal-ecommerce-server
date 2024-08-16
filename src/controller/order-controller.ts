@@ -53,7 +53,6 @@ export const productOrder = asyncHandler(async (req, resp) => {
     order.deleveryCharge
   );
 
-  console.log("sarojaryal", order.totalPrice);
 
   resp.status(200).json(new ApiResponse("", 200, orderData));
 });
@@ -88,7 +87,6 @@ export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
     { path: "purchaseBy" },
     {
       path: "product",
-      // populate: { path: "addedBy", populate: { path: "address" } },
     },
   ]);
   resp.status(200).json(new ApiResponse("", 200, myOrder));
@@ -97,6 +95,11 @@ export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
 export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
   console.log("idd", req.shopId);
   const order = await Order.aggregate([
+    {
+      $match: {
+        status: "pending",
+      },
+    },
     { $unwind: "$product" },
     {
       $lookup: {
@@ -121,6 +124,83 @@ export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
         foreignField: "_id",
         as: "customer",
       },
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, order));
+});
+
+export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
+  const { id } = req.body;
+
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+
+  const orderPlaced = await Order.findByIdAndUpdate(id, {
+    $set: {
+      status: "complete",
+    },
+    new: true,
+  });
+
+  resp
+    .status(200)
+    .json(new ApiResponse("order placed successfully", 200, orderPlaced));
+});
+
+export const orderCancledBySeller = asyncHandler(async (req, resp) => {
+  const { id } = req.body;
+
+  if (!id) {
+    throw new ApiError("please provid id");
+  }
+
+  const cancleOrder = await Order.findByIdAndUpdate(id, {
+    $set: {
+      status: "cancled",
+    },
+    new: true,
+  });
+
+  resp
+    .status(200)
+    .json(new ApiResponse("order cancled successfully", 200, cancleOrder));
+});
+
+export const pendingOrder = asyncHandler(async (req, resp) => {
+  const order = await Order.find({ status: "pending" }).populate([
+    { path: "deleveryAddress" },
+    { path: "billingAddress" },
+    { path: "purchaseBy" },
+    {
+      path: "product",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, order));
+});
+
+export const placedOrder = asyncHandler(async (req, resp) => {
+  const order = await Order.find({ status: "complete" }).populate([
+    { path: "deleveryAddress" },
+    { path: "billingAddress" },
+    { path: "purchaseBy" },
+    {
+      path: "product",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, order));
+});
+
+export const cancledOrder = asyncHandler(async (req, resp) => {
+  const order = await Order.find({ status: "cancled" }).populate([
+    { path: "deleveryAddress" },
+    { path: "billingAddress" },
+    { path: "purchaseBy" },
+    {
+      path: "product",
     },
   ]);
 

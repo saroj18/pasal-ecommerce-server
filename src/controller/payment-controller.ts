@@ -6,10 +6,11 @@ import { Payment } from "../model/payment-model.js";
 import { Order } from "../model/order.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ObjectId } from "mongodb";
+import { Cart } from "../model/cart-model.js";
 
 export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   const { token } = req.body;
-  // const { _id } = req.user;
+  const { _id } = req.user;
   console.log("finalToken", token);
 
   if (!token) {
@@ -41,7 +42,6 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
       new: true,
     }
   );
-  console.log("soraa>>>", productOrder);
   if (!productOrder) {
     throw new ApiError("there is no any orders");
   }
@@ -50,6 +50,9 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
     status: "COMPLETE",
     ref_id: getStatusInfo.ref_id,
   });
+
+  await Cart.deleteMany({ addedBy: _id });
+
   resp.status(200).json(new ApiResponse("", 200, null));
 });
 

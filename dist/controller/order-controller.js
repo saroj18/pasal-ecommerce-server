@@ -37,7 +37,6 @@ export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
     });
     const esewaHash = createOrderHash(order.totalPrice, order._id, deleveryCharge);
     const orderData = yield esewaOrderForm(esewaHash, order.totalPrice, order._id, order.deleveryCharge);
-    console.log("sarojaryal", order.totalPrice);
     resp.status(200).json(new ApiResponse("", 200, orderData));
 }));
 export const getMyOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
@@ -67,7 +66,6 @@ export const getMyOrderForAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
         { path: "purchaseBy" },
         {
             path: "product",
-            // populate: { path: "addedBy", populate: { path: "address" } },
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, myOrder));
@@ -75,6 +73,11 @@ export const getMyOrderForAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
 export const getMyOrderForSeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("idd", req.shopId);
     const order = yield Order.aggregate([
+        {
+            $match: {
+                status: "pending",
+            },
+        },
         { $unwind: "$product" },
         {
             $lookup: {
@@ -99,6 +102,69 @@ export const getMyOrderForSeller = asyncHandler((req, resp) => __awaiter(void 0,
                 foreignField: "_id",
                 as: "customer",
             },
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, order));
+}));
+export const orderPlacedBySeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.body;
+    if (!id) {
+        throw new ApiError("please provide id");
+    }
+    const orderPlaced = yield Order.findByIdAndUpdate(id, {
+        $set: {
+            status: "complete",
+        },
+        new: true,
+    });
+    resp
+        .status(200)
+        .json(new ApiResponse("order placed successfully", 200, orderPlaced));
+}));
+export const orderCancledBySeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.body;
+    if (!id) {
+        throw new ApiError("please provid id");
+    }
+    const cancleOrder = yield Order.findByIdAndUpdate(id, {
+        $set: {
+            status: "cancled",
+        },
+        new: true,
+    });
+    resp
+        .status(200)
+        .json(new ApiResponse("order cancled successfully", 200, cancleOrder));
+}));
+export const pendingOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const order = yield Order.find({ status: "pending" }).populate([
+        { path: "deleveryAddress" },
+        { path: "billingAddress" },
+        { path: "purchaseBy" },
+        {
+            path: "product",
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, order));
+}));
+export const placedOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const order = yield Order.find({ status: "complete" }).populate([
+        { path: "deleveryAddress" },
+        { path: "billingAddress" },
+        { path: "purchaseBy" },
+        {
+            path: "product",
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, order));
+}));
+export const cancledOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const order = yield Order.find({ status: "cancled" }).populate([
+        { path: "deleveryAddress" },
+        { path: "billingAddress" },
+        { path: "purchaseBy" },
+        {
+            path: "product",
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, order));
