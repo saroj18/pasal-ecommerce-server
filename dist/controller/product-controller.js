@@ -81,7 +81,15 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
 }));
 export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const findProduct = yield Product.findById(id).populate("addedBy");
+    const findProduct = yield Product.findById(id).populate([
+        {
+            path: "addedBy",
+        },
+        {
+            path: "review",
+            populate: [{ path: "reviewProduct" }, { path: "reviewBy" }]
+        },
+    ]);
     if (!findProduct) {
         throw new ApiError("product not found");
     }

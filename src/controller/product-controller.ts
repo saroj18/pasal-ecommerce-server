@@ -100,7 +100,15 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
 export const getSingleProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
 
-  const findProduct = await Product.findById(id).populate("addedBy");
+  const findProduct = await Product.findById(id).populate([
+    {
+      path: "addedBy",
+    },
+    {
+      path: "review",
+      populate:[{path:"reviewProduct"},{path:"reviewBy"}]
+    },
+  ]);
 
   if (!findProduct) {
     throw new ApiError("product not found");

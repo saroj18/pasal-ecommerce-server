@@ -53,7 +53,6 @@ export const productOrder = asyncHandler(async (req, resp) => {
     order.deleveryCharge
   );
 
-
   resp.status(200).json(new ApiResponse("", 200, orderData));
 });
 
@@ -69,7 +68,6 @@ export const getMyOrder = asyncHandler(async (req, resp) => {
     { path: "purchaseBy" },
     {
       path: "product",
-      // populate: { path: "addedBy", populate: { path: "address" } },
     },
   ]);
   resp.status(200).json(new ApiResponse("", 200, myOrder));
@@ -81,12 +79,69 @@ export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
     $and: [{ purchaseBy: id }, { orderComplete: false }],
   });
 
-  const myOrder = await Order.find({ purchaseBy: id }).populate([
-    { path: "deleveryAddress" },
-    { path: "billingAddress" },
-    { path: "purchaseBy" },
+  // const myOrder = await Order.find({ purchaseBy: id }).populate([
+  //   { path: "deleveryAddress" },
+  //   { path: "billingAddress" },
+  //   { path: "purchaseBy" },
+  //   {
+  //     path: "product",
+  //   },
+  // ]);
+
+  const myOrder = await Order.aggregate([
     {
-      path: "product",
+      $match: {
+        purchaseBy: new ObjectId(id),
+      },
+    },
+    {
+      $lookup: {
+        from: "addresses",
+        localField: "deleveryAddress",
+        foreignField: "_id",
+        as: "deleveryAddress",
+      },
+    },
+    {
+      $lookup: {
+        from: "addresses",
+        localField: "billingAddress",
+        foreignField: "_id",
+        as: "billingAddress",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "purchaseBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    {
+      $unwind: "$deleveryAddress",
+    },
+    {
+      $unwind: "$billingAddress",
+    },
+    {
+      $group: {
+        _id: "$status",
+        info: {
+          $push: "$$ROOT",
+        },
+      },
+    },
+    {
+      $unwind: "$info",
     },
   ]);
   resp.status(200).json(new ApiResponse("", 200, myOrder));
@@ -144,6 +199,18 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
     new: true,
   });
 
+  let data = await Product.findOneAndUpdate(
+    { _id: { $in: orderPlaced?.product } },
+    {
+      $inc: {
+        stock: -1,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
   resp
     .status(200)
     .json(new ApiResponse("order placed successfully", 200, orderPlaced));
@@ -169,6 +236,11 @@ export const orderCancledBySeller = asyncHandler(async (req, resp) => {
 });
 
 export const pendingOrder = asyncHandler(async (req, resp) => {
+  const { _id } = req.user;
+  await Order.deleteMany({
+    $and: [{ purchaseBy: _id }, { orderComplete: false }],
+  });
+
   const order = await Order.find({ status: "pending" }).populate([
     { path: "deleveryAddress" },
     { path: "billingAddress" },
@@ -188,6 +260,7 @@ export const placedOrder = asyncHandler(async (req, resp) => {
     { path: "purchaseBy" },
     {
       path: "product",
+      populate: { path: "addedBy" },
     },
   ]);
 

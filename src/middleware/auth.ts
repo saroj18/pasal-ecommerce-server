@@ -36,6 +36,9 @@ export const Auth = asyncHandler(async (req, resp, next) => {
     resp.status(404);
     throw new ApiError("User not found");
   }
+  // if (findUser.block) {
+  //   throw new ApiError("Your are blocked by Admin");
+  // }
   console.log("sora", findUser);
   req.user = findUser._id;
   next();

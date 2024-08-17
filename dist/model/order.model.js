@@ -46,6 +46,11 @@ const OrderSchema = new Schema({
         type: String,
         required: true,
     },
+    reviewed: {
+        type: Boolean,
+        required: true,
+        default: false,
+    },
 }, {
     timestamps: true,
 });

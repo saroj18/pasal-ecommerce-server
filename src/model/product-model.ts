@@ -14,6 +14,7 @@ export interface Product extends Document {
   features: string[];
   addedBy: Schema.Types.ObjectId;
   images: string[];
+  review: Schema.Types.ObjectId[];
 }
 
 const productSchema: Schema<Product> = new Schema(
@@ -74,6 +75,12 @@ const productSchema: Schema<Product> = new Schema(
       type: Schema.Types.ObjectId,
       ref: "shop",
     },
+    review: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "review",
+      },
+    ],
   },
   {
     timestamps: true,

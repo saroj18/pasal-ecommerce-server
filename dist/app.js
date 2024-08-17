@@ -9,6 +9,7 @@ import { paymentRoute } from "./route/user/payment-route.js";
 import { orderRoute } from "./route/user/order-route.js";
 import { vendorRoute } from "./route/user/vendor-route.js";
 import { deleveryPersonRoute } from "./route/user/delevery-person-route.js";
+import { reviewRoute } from "./route/user/review-route.js";
 export const app = express();
 app.use(express.json());
 app.use(cors({
@@ -27,6 +28,7 @@ app.use("/api/v1/payment", paymentRoute);
 app.use("/api/v1/order", orderRoute);
 app.use("/api/v1/vendor", vendorRoute);
 app.use("/api/v1/deleveryperson", deleveryPersonRoute);
+app.use("/api/v1/review", reviewRoute);
 app.use((err, req, resp, next) => {
     globalErrorHandler(err, resp);
 });

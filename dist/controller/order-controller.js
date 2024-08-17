@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { esewaOrderForm } from "../helper/esewaOrderForm.js";
 import { Order } from "../model/order.model.js";
+import { Product } from "../model/product-model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
@@ -50,7 +51,6 @@ export const getMyOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         { path: "purchaseBy" },
         {
             path: "product",
-            // populate: { path: "addedBy", populate: { path: "address" } },
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, myOrder));
@@ -60,12 +60,68 @@ export const getMyOrderForAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
     yield Order.deleteMany({
         $and: [{ purchaseBy: id }, { orderComplete: false }],
     });
-    const myOrder = yield Order.find({ purchaseBy: id }).populate([
-        { path: "deleveryAddress" },
-        { path: "billingAddress" },
-        { path: "purchaseBy" },
+    // const myOrder = await Order.find({ purchaseBy: id }).populate([
+    //   { path: "deleveryAddress" },
+    //   { path: "billingAddress" },
+    //   { path: "purchaseBy" },
+    //   {
+    //     path: "product",
+    //   },
+    // ]);
+    const myOrder = yield Order.aggregate([
         {
-            path: "product",
+            $match: {
+                purchaseBy: new ObjectId(id),
+            },
+        },
+        {
+            $lookup: {
+                from: "addresses",
+                localField: "deleveryAddress",
+                foreignField: "_id",
+                as: "deleveryAddress",
+            },
+        },
+        {
+            $lookup: {
+                from: "addresses",
+                localField: "billingAddress",
+                foreignField: "_id",
+                as: "billingAddress",
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "purchaseBy",
+                foreignField: "_id",
+                as: "user",
+            },
+        },
+        {
+            $lookup: {
+                from: "products",
+                localField: "product",
+                foreignField: "_id",
+                as: "product",
+            },
+        },
+        {
+            $unwind: "$deleveryAddress",
+        },
+        {
+            $unwind: "$billingAddress",
+        },
+        {
+            $group: {
+                _id: "$status",
+                info: {
+                    $push: "$$ROOT",
+                },
+            },
+        },
+        {
+            $unwind: "$info",
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, myOrder));
@@ -117,6 +173,13 @@ export const orderPlacedBySeller = asyncHandler((req, resp) => __awaiter(void 0,
         },
         new: true,
     });
+    let data = yield Product.findOneAndUpdate({ _id: { $in: orderPlaced === null || orderPlaced === void 0 ? void 0 : orderPlaced.product } }, {
+        $inc: {
+            stock: -1,
+        },
+    }, {
+        new: true,
+    });
     resp
         .status(200)
         .json(new ApiResponse("order placed successfully", 200, orderPlaced));
@@ -137,6 +200,10 @@ export const orderCancledBySeller = asyncHandler((req, resp) => __awaiter(void 0
         .json(new ApiResponse("order cancled successfully", 200, cancleOrder));
 }));
 export const pendingOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { _id } = req.user;
+    yield Order.deleteMany({
+        $and: [{ purchaseBy: _id }, { orderComplete: false }],
+    });
     const order = yield Order.find({ status: "pending" }).populate([
         { path: "deleveryAddress" },
         { path: "billingAddress" },
@@ -154,6 +221,7 @@ export const placedOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0,
         { path: "purchaseBy" },
         {
             path: "product",
+            populate: { path: "addedBy" },
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, order));
