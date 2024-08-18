@@ -62,6 +62,15 @@ const productSchema = new Schema({
             ref: "review",
         },
     ],
+    starArray: [
+        {
+            type: Number,
+        },
+    ],
+    isOnWishList: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true,
 });

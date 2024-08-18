@@ -87,7 +87,7 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
         },
         {
             path: "review",
-            populate: [{ path: "reviewProduct" }, { path: "reviewBy" }]
+            populate: [{ path: "reviewProduct" }, { path: "reviewBy" }],
         },
     ]);
     if (!findProduct) {
@@ -173,6 +173,11 @@ export const addOnWishlist = asyncHandler((req, resp) => __awaiter(void 0, void 
     if (!addOnWishList) {
         throw new ApiError("faild to add on wishlist");
     }
+    yield Product.findByIdAndUpdate(productId, {
+        $set: {
+            isOnWishList: true,
+        },
+    });
     resp
         .status(200)
         .json(new ApiResponse("successfully added on wishlist", 200, addOnWishList));
@@ -201,6 +206,11 @@ export const deleteWishListProduct = asyncHandler((req, resp) => __awaiter(void 
     if (!findOnWishList) {
         throw new ApiError("product not found");
     }
+    yield Product.findByIdAndUpdate(productId, {
+        $set: {
+            isOnWishList: false,
+        },
+    });
     resp
         .status(200)
         .json(new ApiResponse("product deleted successfully", 200, findOnWishList));

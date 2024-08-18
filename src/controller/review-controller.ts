@@ -38,6 +38,12 @@ export const createReview = asyncHandler(async (req, resp) => {
     reviewStar: star,
   });
 
+  await Product.findByIdAndUpdate(id, {
+    $push: {
+      starArray: star,
+    },
+  });
+
   if (!createReview) {
     throw new ApiError("failed to create review");
   }
@@ -100,6 +106,82 @@ export const getAllMyReviewForSeller = asyncHandler(async (req, resp) => {
     },
     {
       $unwind: "$user",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, findReview));
+});
+
+export const getAllMyReviewForAdmin = asyncHandler(async (req, resp) => {
+  const { id } = req.params;
+  const findReview = await Review.aggregate([
+    {
+      $lookup: {
+        from: "products",
+        localField: "reviewProduct",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    {
+      $unwind: "$product",
+    },
+    {
+      $match: {
+        reviewBy: new ObjectId(id),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "reviewBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "reviewProduct",
+        foreignField: "_id",
+        as: "reviewProduct",
+      },
+    },
+    {
+      $unwind: "$reviewProduct",
+    },
+    {
+      $unwind: "$user",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, findReview));
+});
+
+//get all vendor's review for admin
+export const getVendoerAllReviewForAdmin = asyncHandler(async (req, resp) => {
+  const { id } = req.query;
+
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+
+  const findReview = await Review.aggregate([
+    {
+      $lookup: {
+        from: "products",
+        localField: "reviewProduct",
+        foreignField: "_id",
+        as: "reviewProduct",
+      },
+    },
+    {
+      $unwind: "$reviewProduct",
+    },
+    {
+      $match: {
+        "reviewProduct.addedBy": new ObjectId(id as string),
+      },
     },
   ]);
 

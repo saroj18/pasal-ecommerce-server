@@ -73,6 +73,7 @@ export const getMyOrder = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, myOrder));
 });
 
+//admin see user's order
 export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
   const { id } = req.params;
   await Order.deleteMany({
@@ -147,6 +148,8 @@ export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, myOrder));
 });
 
+//seller see own's order
+
 export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
   console.log("idd", req.shopId);
   const order = await Order.aggregate([
@@ -185,6 +188,8 @@ export const getMyOrderForSeller = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, order));
 });
 
+//order placed by seller
+
 export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
   const { id } = req.body;
 
@@ -216,6 +221,7 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
     .json(new ApiResponse("order placed successfully", 200, orderPlaced));
 });
 
+//order cancle by seller
 export const orderCancledBySeller = asyncHandler(async (req, resp) => {
   const { id } = req.body;
 
@@ -278,4 +284,78 @@ export const cancledOrder = asyncHandler(async (req, resp) => {
   ]);
 
   resp.status(200).json(new ApiResponse("", 200, order));
+});
+
+// order history of vendor
+
+export const orderHistoryOfVendor = asyncHandler(async (req, resp) => {
+  const { id } = req.query;
+  console.log("iddd", id);
+
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+
+  const findOrder = await Order.aggregate([
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    {
+      $match: {
+        product:{
+          $elemMatch:{
+            addedBy:new ObjectId(id as string)
+          }
+        }
+      },
+    },
+    {
+      $lookup: {
+        from: "addresses",
+        localField: "deleveryAddress",
+        foreignField: "_id",
+        as: "deleveryAddress",
+      },
+    },
+    {
+      $lookup: {
+        from: "addresses",
+        localField: "billingAddress",
+        foreignField: "_id",
+        as: "billingAddress",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "purchaseBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $unwind: "$deleveryAddress",
+    },
+    {
+      $unwind: "$billingAddress",
+    },
+    {
+      $group: {
+        _id: "$status",
+        info: {
+          $push: "$$ROOT",
+        },
+      },
+    },
+    {
+      $unwind: "$info",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, findOrder));
 });

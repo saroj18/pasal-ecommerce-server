@@ -11,6 +11,7 @@ import {
 } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
+import { ObjectId } from "mongodb";
 
 export const addProduct = asyncHandler(async (req, resp) => {
   const {
@@ -106,7 +107,7 @@ export const getSingleProduct = asyncHandler(async (req, resp) => {
     },
     {
       path: "review",
-      populate:[{path:"reviewProduct"},{path:"reviewBy"}]
+      populate: [{ path: "reviewProduct" }, { path: "reviewBy" }],
     },
   ]);
 
@@ -224,6 +225,12 @@ export const addOnWishlist = asyncHandler(async (req, resp) => {
     throw new ApiError("faild to add on wishlist");
   }
 
+  await Product.findByIdAndUpdate(productId, {
+    $set: {
+      isOnWishList: true,
+    },
+  });
+
   resp
     .status(200)
     .json(
@@ -265,6 +272,11 @@ export const deleteWishListProduct = asyncHandler(async (req, resp) => {
   if (!findOnWishList) {
     throw new ApiError("product not found");
   }
+  await Product.findByIdAndUpdate(productId, {
+    $set: {
+      isOnWishList: false,
+    },
+  });
 
   resp
     .status(200)

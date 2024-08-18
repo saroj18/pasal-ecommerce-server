@@ -5,6 +5,8 @@ interface ReviewType extends Document {
   reviewProduct: Schema.Types.ObjectId;
   reviewMessage: string;
   reviewStar: Number;
+  averageReview: Number;
+  starArray: Number[];
 }
 
 const ReviewSchema: Schema<ReviewType> = new Schema(
@@ -29,6 +31,12 @@ const ReviewSchema: Schema<ReviewType> = new Schema(
       required: true,
       default: 0,
     },
+    starArray: [
+      {
+        type: Number,
+        required: true,
+      },
+    ],
   },
   {
     timestamps: true,

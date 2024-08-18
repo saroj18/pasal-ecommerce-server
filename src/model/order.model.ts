@@ -12,6 +12,7 @@ export interface OrderType extends Document {
   totalPrice: number;
   deleveryCharge: number;
   reviewed: boolean;
+  productQty: number;
 }
 
 const OrderSchema: Schema<OrderType> = new Schema(
@@ -66,6 +67,10 @@ const OrderSchema: Schema<OrderType> = new Schema(
       type: Boolean,
       required: true,
       default: false,
+    },
+    productQty: {
+      type: Number,
+      default: 1,
     },
   },
   {

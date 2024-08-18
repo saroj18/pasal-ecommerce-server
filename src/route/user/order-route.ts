@@ -6,6 +6,7 @@ import {
   getMyOrderForAdmin,
   getMyOrderForSeller,
   orderCancledBySeller,
+  orderHistoryOfVendor,
   orderPlacedBySeller,
   pendingOrder,
   placedOrder,
@@ -27,4 +28,5 @@ orderRoute
   .route("/cancled")
   .post(sellerAuth, orderCancledBySeller)
   .get(Auth, cancledOrder);
+orderRoute.route("/history").get(Auth, orderHistoryOfVendor);
 orderRoute.route("/:id").get(Auth, getMyOrderForAdmin);

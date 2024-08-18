@@ -18,7 +18,6 @@ import { Cart } from "../model/cart-model.js";
 export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.body;
     const { _id } = req.user;
-    console.log("finalToken", token);
     if (!token) {
         throw new Error("token is required");
     }
@@ -46,6 +45,7 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
         status: "COMPLETE",
         ref_id: getStatusInfo.ref_id,
     });
+    // const findCartData = await Cart.find({ addedBy: _id });
     yield Cart.deleteMany({ addedBy: _id });
     resp.status(200).json(new ApiResponse("", 200, null));
 }));
@@ -101,4 +101,49 @@ export const getPaymentHistory = asyncHandler((req, resp) => __awaiter(void 0, v
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, payment));
+}));
+// get payment history of vendor's for admin side
+export const paymentHistoryOfVendor = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.query;
+    if (!id) {
+        throw new ApiError("please provide id");
+    }
+    const findPayment = yield Payment.aggregate([
+        {
+            $lookup: {
+                from: "orders",
+                localField: "order",
+                foreignField: "_id",
+                as: "orders",
+            },
+        },
+        {
+            $unwind: "$orders",
+        },
+        {
+            $lookup: {
+                from: "products",
+                localField: "orders.product",
+                foreignField: "_id",
+                as: "products",
+            },
+        },
+        {
+            $match: {
+                "products.addedBy": new ObjectId(id),
+            },
+        },
+        {
+            $unwind: "$products",
+        },
+        {
+            $lookup: {
+                from: "shops",
+                localField: "orders.products.addedBy",
+                foreignField: "_id",
+                as: "shop",
+            },
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, findPayment));
 }));

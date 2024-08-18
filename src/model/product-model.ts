@@ -15,6 +15,8 @@ export interface Product extends Document {
   addedBy: Schema.Types.ObjectId;
   images: string[];
   review: Schema.Types.ObjectId[];
+  starArray: Number[];
+  isOnWishList: boolean;
 }
 
 const productSchema: Schema<Product> = new Schema(
@@ -81,6 +83,15 @@ const productSchema: Schema<Product> = new Schema(
         ref: "review",
       },
     ],
+    starArray: [
+      {
+        type: Number,
+      },
+    ],
+    isOnWishList: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
