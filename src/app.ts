@@ -20,7 +20,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://pasal-ecommerce-server.onrender.com",
+      "https://pasal-ecommerce-client.vercel.app",
     ],
     credentials: true,
   })
