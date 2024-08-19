@@ -145,12 +145,8 @@ export const updateProduct = asyncHandler(async (req, resp) => {
     features,
     price,
     discount,
-    image,
   } = req.body;
-
-  await deleteFromCloudinary(image);
-  const images = req.files as Express.Multer.File[];
-  const uploadOnCloudinary = await uploadImageOnCloudinary(images, "products");
+  console.log("kora", description);
 
   const validateInfo = ProductZodSchema.safeParse({
     name,
@@ -163,7 +159,7 @@ export const updateProduct = asyncHandler(async (req, resp) => {
     features,
     price,
     discount,
-    images: uploadOnCloudinary,
+    images: "UPDATE",
   });
   if (!validateInfo.success) {
     const error = errorFormatter(validateInfo.error?.format());

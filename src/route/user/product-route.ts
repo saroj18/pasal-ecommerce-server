@@ -44,4 +44,4 @@ productRouter
   .route("/:id")
   .get(getSingleProduct)
   .delete(sellerAuth, deleteProduct)
-  .put(sellerAuth, upload.array("images", 5), updateProduct);
+  .post(sellerAuth, updateProduct);

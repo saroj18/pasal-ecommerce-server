@@ -13,7 +13,7 @@ import { WishList } from "../model/wishlist-model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
-import { deleteFromCloudinary, uploadImageOnCloudinary, } from "../utils/cloudinary.js";
+import { uploadImageOnCloudinary, } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
 export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
@@ -108,10 +108,8 @@ export const deleteProduct = asyncHandler((req, resp) => __awaiter(void 0, void 
 export const updateProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { id } = req.params;
-    const { name, description, brand, barganing, chating, stock, category, features, price, discount, image, } = req.body;
-    yield deleteFromCloudinary(image);
-    const images = req.files;
-    const uploadOnCloudinary = yield uploadImageOnCloudinary(images, "products");
+    const { name, description, brand, barganing, chating, stock, category, features, price, discount, } = req.body;
+    console.log("kora", description);
     const validateInfo = ProductZodSchema.safeParse({
         name,
         description,
@@ -123,7 +121,7 @@ export const updateProduct = asyncHandler((req, resp) => __awaiter(void 0, void 
         features,
         price,
         discount,
-        images: uploadOnCloudinary,
+        images: "UPDATE",
     });
     if (!validateInfo.success) {
         const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
