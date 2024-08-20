@@ -14,18 +14,16 @@ import { reviewRoute } from "./route/user/review-route.js";
 
 export const app = express();
 
-app.set("trust proxy", 1);
 app.use(express.json());
 app.use(
-  cors()
-  //   {
-  //   origin: [
-  //     "http://localhost:5173",
-  //     "http://localhost:5174",
-  //     "https://pasal-ecommerce-client.vercel.app",
-  //   ],
-  //   credentials: true,
-  // }
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://pasal-ecommerce-client.vercel.app",
+    ],
+    credentials: true,
+  })
 );
 app.use(cookieParser());
 

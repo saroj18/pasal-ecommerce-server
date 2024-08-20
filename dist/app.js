@@ -11,18 +11,15 @@ import { vendorRoute } from "./route/user/vendor-route.js";
 import { deleveryPersonRoute } from "./route/user/delevery-person-route.js";
 import { reviewRoute } from "./route/user/review-route.js";
 export const app = express();
-app.set("trust proxy", 1);
 app.use(express.json());
-app.use(cors()
-//   {
-//   origin: [
-//     "http://localhost:5173",
-//     "http://localhost:5174",
-//     "https://pasal-ecommerce-client.vercel.app",
-//   ],
-//   credentials: true,
-// }
-);
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://pasal-ecommerce-client.vercel.app",
+    ],
+    credentials: true,
+}));
 app.use(cookieParser());
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
