@@ -71,6 +71,14 @@ const productSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    totalSale: {
+        type: Number,
+        default: 0,
+    },
+    priceAfterDiscount: {
+        type: Number,
+        default: 0,
+    },
 }, {
     timestamps: true,
 });

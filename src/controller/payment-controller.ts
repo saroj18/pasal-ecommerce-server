@@ -7,6 +7,7 @@ import { Order } from "../model/order.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ObjectId } from "mongodb";
 import { Cart } from "../model/cart-model.js";
+import { Product } from "../model/product-model.js";
 
 export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   const { token } = req.body;
@@ -19,10 +20,8 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   let decodeToken: { [key: string]: string } = JSON.parse(
     Buffer.from(token, "base64").toString("utf-8")
   );
-  console.log("ss", decodeToken);
 
   const getStatusInfo = await esewaStatusInfo(decodeToken);
-  console.log("ttt", getStatusInfo);
 
   if (getStatusInfo.status != "COMPLETE") {
     // await Order.findByIdAndDelete(getStatusInfo.transaction_uuid);
@@ -53,6 +52,10 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   // const findCartData = await Cart.find({ addedBy: _id });
 
   await Cart.deleteMany({ addedBy: _id });
+  await Product.updateMany(
+    { _id: { $in: productOrder.product } },
+    { $inc: { totalSale: 1 } }
+  );
 
   resp.status(200).json(new ApiResponse("", 200, null));
 });

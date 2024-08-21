@@ -13,6 +13,7 @@ import { errorFormatter } from "../utils/errorFormater.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
 import { ObjectId } from "mongodb";
 
+//product add by seller
 export const addProduct = asyncHandler(async (req, resp) => {
   const {
     name,
@@ -62,6 +63,7 @@ export const addProduct = asyncHandler(async (req, resp) => {
     discount,
     images: uploadOnCloudinary,
     addedBy: req.shopId,
+    priceAfterDiscount: price - (price * Number(discount)) / 100,
   });
 
   if (!saveProductOnDb) {
@@ -73,6 +75,7 @@ export const addProduct = asyncHandler(async (req, resp) => {
     .json(new ApiResponse("successfully added product", 200, saveProductOnDb));
 });
 
+//get productInventory for seller
 export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
   const id = req.shopId;
 
@@ -89,35 +92,118 @@ export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, findProducts));
 });
 
+//get all products for all users
 export const getAllProducts = asyncHandler(async (req, resp) => {
-  const findProducts = await Product.find().populate({
-    path: "addedBy",
-    select: "-refreshToken -password",
-  });
+  const findProducts = await Product.find().populate([
+    {
+      path: "addedBy",
+      select: "-refreshToken -password",
+    },
+    {
+      path: "review",
+    },
+  ]);
 
   resp.status(200).json(new ApiResponse("", 200, findProducts));
 });
 
+//get single product for customer
 export const getSingleProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
+  console.log(id);
 
-  const findProduct = await Product.findById(id).populate([
+  const findProduct = await Product.aggregate([
     {
-      path: "addedBy",
+      $match: {
+        _id: new ObjectId(id),
+      },
     },
     {
-      path: "review",
-      populate: [{ path: "reviewProduct" }, { path: "reviewBy" }],
+      $lookup: {
+        from: "shops",
+        localField: "addedBy",
+        foreignField: "_id",
+        as: "addedBy",
+      },
+    },
+    {
+      $unwind: "$addedBy",
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "review",
+        foreignField: "_id",
+        as: "review",
+      },
+    },
+    {
+      $unwind: {
+        path: "$review",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "review.reviewBy",
+        foreignField: "_id",
+        as: "review.reviewBy",
+      },
+    },
+    {
+      $unwind: {
+        path: "$review.reviewBy",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "review.reviewProduct",
+        foreignField: "_id",
+        as: "review.reviewProduct",
+      },
+    },
+    {
+      $unwind: {
+        path: "$review.reviewProduct",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        description: { $first: "$description" },
+        brand: { $first: "$brand" },
+        barganing: { $first: "$barganing" },
+        chating: { $first: "$chating" },
+        stock: { $first: "$stock" },
+        category: { $first: "$category" },
+        features: { $first: "$features" },
+        price: { $first: "$price" },
+        discount: { $first: "$discount" },
+        images: { $first: "$images" },
+        addedBy: { $first: "$addedBy" },
+        starArray: { $first: "$starArray" },
+        review: {
+          $push: "$review",
+        },
+        priceAfterDiscount: { $first: "$priceAfterDiscount" },
+      },
     },
   ]);
+  console.log(findProduct);
 
   if (!findProduct) {
     throw new ApiError("product not found");
   }
 
-  resp.status(200).json(new ApiResponse("", 200, findProduct));
+  resp.status(200).json(new ApiResponse("", 200, findProduct[0]));
 });
 
+//delete products for seller
 export const deleteProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
 
@@ -132,6 +218,7 @@ export const deleteProduct = asyncHandler(async (req, resp) => {
     .json(new ApiResponse("product deleted successfully", 200, findProduct));
 });
 
+//update product for seller
 export const updateProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
   const {
@@ -146,7 +233,6 @@ export const updateProduct = asyncHandler(async (req, resp) => {
     price,
     discount,
   } = req.body;
-  console.log("kora", description);
 
   const validateInfo = ProductZodSchema.safeParse({
     name,
@@ -167,18 +253,25 @@ export const updateProduct = asyncHandler(async (req, resp) => {
     return;
   }
 
-  const updateProduct = await Product.findByIdAndUpdate(id, {
-    name,
-    description,
-    brand,
-    barganing,
-    chating,
-    stock,
-    category,
-    features,
-    price,
-    discount,
-  });
+  const updateProduct = await Product.findByIdAndUpdate(
+    id,
+    {
+      name,
+      description,
+      brand,
+      barganing,
+      chating,
+      stock,
+      category,
+      features,
+      price,
+      discount,
+      priceAfterDiscount: price - (price * Number(discount)) / 100,
+    },
+    {
+      new: true,
+    }
+  );
 
   if (!updateProduct) {
     throw new ApiError("product not found");
@@ -189,6 +282,7 @@ export const updateProduct = asyncHandler(async (req, resp) => {
     .json(new ApiResponse("product updated successfully", 200, updateProduct));
 });
 
+//add on wishlist for customer
 export const addOnWishlist = asyncHandler(async (req, resp) => {
   const { productId } = req.body;
   const { _id } = req.user;
@@ -209,7 +303,19 @@ export const addOnWishlist = asyncHandler(async (req, resp) => {
   });
 
   if (findOnWishList) {
-    throw new ApiError("product already on wishlist");
+    await WishList.findOneAndDelete({
+      addedBy: _id,
+      product: productId,
+    });
+    await Product.findByIdAndUpdate(productId, {
+      $set: {
+        isOnWishList: false,
+      },
+    });
+    resp
+      .status(200)
+      .json(new ApiResponse("product remove from wishlist", 200, null));
+    return;
   }
 
   const addOnWishList = await WishList.create({
@@ -234,6 +340,7 @@ export const addOnWishlist = asyncHandler(async (req, resp) => {
     );
 });
 
+//get wishlistproduct for customer
 export const getWishListProduct = asyncHandler(async (req, resp) => {
   const { _id } = req.user;
 
@@ -252,6 +359,7 @@ export const getWishListProduct = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, findWishList));
 });
 
+//delete product from wishlist fro customer
 export const deleteWishListProduct = asyncHandler(async (req, resp) => {
   const { productId } = req.body;
   const { _id } = req.user;
@@ -279,6 +387,7 @@ export const deleteWishListProduct = asyncHandler(async (req, resp) => {
     .json(new ApiResponse("product deleted successfully", 200, findOnWishList));
 });
 
+//get cart and wishlist product count for customer
 export const wishListAndCartCount = asyncHandler(async (req, resp) => {
   const { _id } = req.user;
 
@@ -292,6 +401,7 @@ export const wishListAndCartCount = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, { wishListCount, cartCount }));
 });
 
+//get all products which is added by seller
 export const getAllMyProducts = asyncHandler(async (req, resp) => {
   const id = req.shopId;
 

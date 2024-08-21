@@ -15,6 +15,7 @@ import { Order } from "../model/order.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ObjectId } from "mongodb";
 import { Cart } from "../model/cart-model.js";
+import { Product } from "../model/product-model.js";
 export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.body;
     const { _id } = req.user;
@@ -22,9 +23,7 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
         throw new Error("token is required");
     }
     let decodeToken = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
-    console.log("ss", decodeToken);
     const getStatusInfo = yield esewaStatusInfo(decodeToken);
-    console.log("ttt", getStatusInfo);
     if (getStatusInfo.status != "COMPLETE") {
         // await Order.findByIdAndDelete(getStatusInfo.transaction_uuid);
         throw new ApiError("your order was not created");
@@ -47,6 +46,7 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
     });
     // const findCartData = await Cart.find({ addedBy: _id });
     yield Cart.deleteMany({ addedBy: _id });
+    yield Product.updateMany({ _id: { $in: productOrder.product } }, { $inc: { totalSale: 1 } });
     resp.status(200).json(new ApiResponse("", 200, null));
 }));
 export const getPaymentHistory = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {

@@ -17,6 +17,8 @@ export interface Product extends Document {
   review: Schema.Types.ObjectId[];
   starArray: Number[];
   isOnWishList: boolean;
+  totalSale: number;
+  priceAfterDiscount: number;
 }
 
 const productSchema: Schema<Product> = new Schema(
@@ -91,6 +93,14 @@ const productSchema: Schema<Product> = new Schema(
     isOnWishList: {
       type: Boolean,
       default: false,
+    },
+    totalSale: {
+      type: Number,
+      default: 0,
+    },
+    priceAfterDiscount: {
+      type: Number,
+      default: 0,
     },
   },
   {

@@ -11,6 +11,7 @@ import { orderRoute } from "./route/user/order-route.js";
 import { vendorRoute } from "./route/user/vendor-route.js";
 import { deleveryPersonRoute } from "./route/user/delevery-person-route.js";
 import { reviewRoute } from "./route/user/review-route.js";
+import { offerRoute } from "./route/user/offers.route.js";
 
 export const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/v1/order", orderRoute);
 app.use("/api/v1/vendor", vendorRoute);
 app.use("/api/v1/deleveryperson", deleveryPersonRoute);
 app.use("/api/v1/review", reviewRoute);
+app.use("/api/v1/offers", offerRoute);
 app.use((err: ApiError, req: Request, resp: Response, next: NextFunction) => {
   globalErrorHandler(err, resp);
 });
