@@ -24,7 +24,6 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   const getStatusInfo = await esewaStatusInfo(decodeToken);
 
   if (getStatusInfo.status != "COMPLETE") {
-    // await Order.findByIdAndDelete(getStatusInfo.transaction_uuid);
     throw new ApiError("your order was not created");
   }
 
@@ -48,14 +47,17 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
     status: "COMPLETE",
     ref_id: getStatusInfo.ref_id,
   });
-
-  // const findCartData = await Cart.find({ addedBy: _id });
+  console.log("ks", productOrder.cartInfo);
 
   await Cart.deleteMany({ addedBy: _id });
-  await Product.updateMany(
-    { _id: { $in: productOrder.product } },
-    { $inc: { totalSale: 1 } }
-  );
+
+  productOrder.cartInfo.forEach(async (ele) => {
+    await Product.findByIdAndUpdate(ele.product._id, {
+      $inc: {
+        totalSale: ele.productCount,
+      },
+    });
+  });
 
   resp.status(200).json(new ApiResponse("", 200, null));
 });
@@ -143,6 +145,9 @@ export const paymentHistoryOfVendor = asyncHandler(async (req, resp) => {
         foreignField: "_id",
         as: "products",
       },
+    },
+    {
+      $unwind: "$products",
     },
     {
       $match: {

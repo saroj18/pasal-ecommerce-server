@@ -55,6 +55,7 @@ export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
         images: uploadOnCloudinary,
         addedBy: req.shopId,
         priceAfterDiscount: price - (price * Number(discount)) / 100,
+        userDiscount: Number(discount),
     });
     if (!saveProductOnDb) {
         throw new Error("faild to save on db");
@@ -168,6 +169,8 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
                 images: { $first: "$images" },
                 addedBy: { $first: "$addedBy" },
                 starArray: { $first: "$starArray" },
+                isOnWishList: { $first: "$isOnWishList" },
+                offer: { $first: "$offer" },
                 review: {
                     $push: "$review",
                 },
@@ -175,10 +178,19 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
             },
         },
     ]);
-    console.log(findProduct);
     if (!findProduct) {
         throw new ApiError("product not found");
     }
+    const relatedProducts = yield Product.find({
+        category: findProduct[0].category,
+    })
+        .populate("review")
+        .limit(10);
+    const ourOtherProducts = yield Product.find({
+        addedBy: findProduct[0].addedBy,
+    });
+    findProduct[0].relatedProducts = relatedProducts;
+    findProduct[0].ourOtherProducts = ourOtherProducts;
     resp.status(200).json(new ApiResponse("", 200, findProduct[0]));
 }));
 //delete products for seller
@@ -227,6 +239,7 @@ export const updateProduct = asyncHandler((req, resp) => __awaiter(void 0, void 
         price,
         discount,
         priceAfterDiscount: price - (price * Number(discount)) / 100,
+        userDiscount: Number(discount),
     }, {
         new: true,
     });
@@ -330,7 +343,7 @@ export const wishListAndCartCount = asyncHandler((req, resp) => __awaiter(void 0
 }));
 //get all products which is added by seller
 export const getAllMyProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = req.shopId;
-    const findProduct = yield Product.find({ addedBy: id });
+    const { id } = req.query;
+    const findProduct = yield Product.find({ addedBy: id || req.shopId });
     resp.json(new ApiResponse("", 200, findProduct));
 }));

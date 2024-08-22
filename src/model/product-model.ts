@@ -19,7 +19,8 @@ export interface Product extends Document {
   isOnWishList: boolean;
   totalSale: number;
   priceAfterDiscount: number;
-  offerDiscount: number | null;
+  userDiscount: number;
+  offer: boolean;
 }
 
 const productSchema: Schema<Product> = new Schema(
@@ -103,9 +104,13 @@ const productSchema: Schema<Product> = new Schema(
       type: Number,
       default: 0,
     },
-    offerDiscount: {
+    userDiscount: {
       type: Number,
-      default: null,
+      default: 0,
+    },
+    offer: {
+      type: Boolean,
+      default: false,
     },
   },
   {

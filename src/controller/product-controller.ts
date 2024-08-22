@@ -64,6 +64,7 @@ export const addProduct = asyncHandler(async (req, resp) => {
     images: uploadOnCloudinary,
     addedBy: req.shopId,
     priceAfterDiscount: price - (price * Number(discount)) / 100,
+    userDiscount: Number(discount),
   });
 
   if (!saveProductOnDb) {
@@ -187,6 +188,8 @@ export const getSingleProduct = asyncHandler(async (req, resp) => {
         images: { $first: "$images" },
         addedBy: { $first: "$addedBy" },
         starArray: { $first: "$starArray" },
+        isOnWishList: { $first: "$isOnWishList" },
+        offer: { $first: "$offer" },
         review: {
           $push: "$review",
         },
@@ -194,11 +197,23 @@ export const getSingleProduct = asyncHandler(async (req, resp) => {
       },
     },
   ]);
-  console.log(findProduct);
 
   if (!findProduct) {
     throw new ApiError("product not found");
   }
+
+  const relatedProducts = await Product.find({
+    category: findProduct[0].category,
+  })
+    .populate("review")
+    .limit(10);
+
+  const ourOtherProducts = await Product.find({
+    addedBy: findProduct[0].addedBy,
+  });
+
+  findProduct[0].relatedProducts = relatedProducts;
+  findProduct[0].ourOtherProducts = ourOtherProducts;
 
   resp.status(200).json(new ApiResponse("", 200, findProduct[0]));
 });
@@ -267,6 +282,7 @@ export const updateProduct = asyncHandler(async (req, resp) => {
       price,
       discount,
       priceAfterDiscount: price - (price * Number(discount)) / 100,
+      userDiscount: Number(discount),
     },
     {
       new: true,
@@ -403,9 +419,9 @@ export const wishListAndCartCount = asyncHandler(async (req, resp) => {
 
 //get all products which is added by seller
 export const getAllMyProducts = asyncHandler(async (req, resp) => {
-  const id = req.shopId;
+  const { id } = req.query;
 
-  const findProduct = await Product.find({ addedBy: id });
+  const findProduct = await Product.find({ addedBy: id || req.shopId });
 
   resp.json(new ApiResponse("", 200, findProduct));
 });

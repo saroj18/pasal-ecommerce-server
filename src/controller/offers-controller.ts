@@ -7,7 +7,7 @@ import { OfferZodSchema } from "../zodschema/offers/offer.js";
 
 export const createOffer = asyncHandler(async (req, resp) => {
   const { name, discount, products } = req.body;
-  console.log("sora>>>", products);
+
   const validate = OfferZodSchema.safeParse({ name, discount, products });
 
   if (!validate.success) {
@@ -16,17 +16,23 @@ export const createOffer = asyncHandler(async (req, resp) => {
     return;
   }
 
-  await Product.updateMany(
-    { _id: { $in: products } },
-    {
-      $set: {
-        priceAfterDiscount: {
-          $subtract: ["$price", { $multiply: ["$price", discount / 100] }],
+  const product = await Product.find({ _id: { $in: products } });
+
+  product.forEach(async (element) => {
+    await Product.findByIdAndUpdate(
+      element._id,
+      {
+        $set: {
+          discount: discount,
+          offer: true,
+          priceAfterDiscount: element.price - (element.price * discount) / 100,
         },
       },
-    }
-  );
-
+      {
+        runValidators: true,
+      }
+    );
+  });
   const offer = await Offer.create({
     name,
     discount,
@@ -38,27 +44,40 @@ export const createOffer = asyncHandler(async (req, resp) => {
 });
 
 export const getAllOffers = asyncHandler(async (req, resp) => {
-  const offers = await Offer.find().populate("product");
+  const offers = await Offer.find().populate({
+    path: "product",
+    populate: {
+      path: "review",
+    },
+  });
   resp.status(200).json(new ApiResponse("", 200, offers));
 });
 
 export const deleteOffers = asyncHandler(async (req, resp) => {
   const { id } = req.query;
-  const product = await Offer.findById(id);
-  await Product.updateMany(
-    { _id: { $in: product.product } },
-    {
-      $set: {
-        offerDiscount: {
-          $subtract: [
-            "$price",
-            { $multiply: ["$price", product.discount / 100] },
-          ],
+  const offer = await Offer.findById(id);
+
+  let data = await Product.find({ _id: { $in: offer.product } });
+  console.log("pro", data);
+
+  data.forEach(async (element) => {
+    await Product.findByIdAndUpdate(
+      element._id,
+      {
+        $set: {
+          discount: element.userDiscount,
+          offer: false,
+          priceAfterDiscount:
+            element.price - (element.price * element.userDiscount) / 100,
         },
       },
-    }
-  );
-  const offer = await Offer.findByIdAndDelete(id);
+      {
+        runValidators: true,
+      }
+    );
+  });
+
+  await Offer.findByIdAndDelete(id);
   if (!offer) {
     resp.status(404).json(new ApiResponse("Offer not found", 404, null));
     return;

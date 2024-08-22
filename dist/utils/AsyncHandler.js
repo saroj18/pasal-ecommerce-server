@@ -13,6 +13,7 @@ export const asyncHandler = (func) => {
             yield func(req, resp, next);
         }
         catch (error) {
+            console.log(error.stack);
             next(error);
         }
     });

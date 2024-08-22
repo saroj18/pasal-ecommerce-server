@@ -79,9 +79,13 @@ const productSchema = new Schema({
         type: Number,
         default: 0,
     },
-    offerDiscount: {
+    userDiscount: {
         type: Number,
-        default: null,
+        default: 0,
+    },
+    offer: {
+        type: Boolean,
+        default: false,
     },
 }, {
     timestamps: true,

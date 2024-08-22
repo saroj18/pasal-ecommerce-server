@@ -18,15 +18,11 @@ export const orderRoute = Router();
 
 orderRoute.route("/esewa").post(Auth, productOrder);
 orderRoute.route("/").get(Auth, getMyOrder);
-orderRoute.route("/pending").get(Auth, pendingOrder);
+orderRoute.route("/myorder").get(Auth, pendingOrder);
 orderRoute.route("/sellerorder").get(sellerAuth, getMyOrderForSeller);
-orderRoute
-  .route("/placed")
-  .post(sellerAuth, orderPlacedBySeller)
-  .get(Auth, placedOrder);
-orderRoute
-  .route("/cancled")
-  .post(sellerAuth, orderCancledBySeller)
-  .get(Auth, cancledOrder);
+orderRoute.route("/placed").post(sellerAuth, orderPlacedBySeller);
+// .get(Auth, placedOrder);
+orderRoute.route("/cancled").post(sellerAuth, orderCancledBySeller);
+// .get(Auth, cancledOrder);
 orderRoute.route("/history").get(Auth, orderHistoryOfVendor);
 orderRoute.route("/:id").get(Auth, getMyOrderForAdmin);

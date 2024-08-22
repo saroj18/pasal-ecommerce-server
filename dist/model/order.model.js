@@ -51,9 +51,8 @@ const OrderSchema = new Schema({
         required: true,
         default: false,
     },
-    productQty: {
-        type: Number,
-        default: 1,
+    cartInfo: {
+        type: [],
     },
 }, {
     timestamps: true,

@@ -25,7 +25,6 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
     let decodeToken = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
     const getStatusInfo = yield esewaStatusInfo(decodeToken);
     if (getStatusInfo.status != "COMPLETE") {
-        // await Order.findByIdAndDelete(getStatusInfo.transaction_uuid);
         throw new ApiError("your order was not created");
     }
     const productOrder = yield Order.findByIdAndUpdate(getStatusInfo.transaction_uuid, {
@@ -44,9 +43,15 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
         status: "COMPLETE",
         ref_id: getStatusInfo.ref_id,
     });
-    // const findCartData = await Cart.find({ addedBy: _id });
+    console.log("ks", productOrder.cartInfo);
     yield Cart.deleteMany({ addedBy: _id });
-    yield Product.updateMany({ _id: { $in: productOrder.product } }, { $inc: { totalSale: 1 } });
+    productOrder.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
+        yield Product.findByIdAndUpdate(ele.product._id, {
+            $inc: {
+                totalSale: ele.productCount,
+            },
+        });
+    }));
     resp.status(200).json(new ApiResponse("", 200, null));
 }));
 export const getPaymentHistory = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
@@ -127,6 +132,9 @@ export const paymentHistoryOfVendor = asyncHandler((req, resp) => __awaiter(void
                 foreignField: "_id",
                 as: "products",
             },
+        },
+        {
+            $unwind: "$products",
         },
         {
             $match: {

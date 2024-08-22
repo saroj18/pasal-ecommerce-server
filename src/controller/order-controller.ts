@@ -16,6 +16,7 @@ export const productOrder = asyncHandler(async (req, resp) => {
     payMethod,
     totalPrice,
     deleveryCharge,
+    cartInfo,
   } = orderDetails;
   const { _id } = req.user;
 
@@ -38,7 +39,9 @@ export const productOrder = asyncHandler(async (req, resp) => {
     purchaseBy: _id,
     deleveryCharge,
     status: "pending",
+    cartInfo,
   });
+  console.log("info", cartInfo);
 
   const esewaHash = createOrderHash(
     order.totalPrice,
@@ -79,15 +82,6 @@ export const getMyOrderForAdmin = asyncHandler(async (req, resp) => {
   await Order.deleteMany({
     $and: [{ purchaseBy: id }, { orderComplete: false }],
   });
-
-  // const myOrder = await Order.find({ purchaseBy: id }).populate([
-  //   { path: "deleveryAddress" },
-  //   { path: "billingAddress" },
-  //   { path: "purchaseBy" },
-  //   {
-  //     path: "product",
-  //   },
-  // ]);
 
   const myOrder = await Order.aggregate([
     {
@@ -204,11 +198,11 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
     new: true,
   });
 
-  let data = await Product.findOneAndUpdate(
+  let data = await Product.updateMany(
     { _id: { $in: orderPlaced?.product } },
     {
       $inc: {
-        stock: -1,
+        stock: -orderPlaced.productQty,
       },
     },
     {
@@ -247,56 +241,12 @@ export const pendingOrder = asyncHandler(async (req, resp) => {
     $and: [{ purchaseBy: _id }, { orderComplete: false }],
   });
 
-  const order = await Order.find({ status: "pending" }).populate([
-    { path: "deleveryAddress" },
-    { path: "billingAddress" },
-    { path: "purchaseBy" },
-    {
-      path: "product",
-    },
-  ]);
-
-  resp.status(200).json(new ApiResponse("", 200, order));
-});
-
-export const placedOrder = asyncHandler(async (req, resp) => {
-  const order = await Order.find({ status: "complete" }).populate([
-    { path: "deleveryAddress" },
-    { path: "billingAddress" },
-    { path: "purchaseBy" },
-    {
-      path: "product",
-      populate: { path: "addedBy" },
-    },
-  ]);
-
-  resp.status(200).json(new ApiResponse("", 200, order));
-});
-
-export const cancledOrder = asyncHandler(async (req, resp) => {
-  const order = await Order.find({ status: "cancled" }).populate([
-    { path: "deleveryAddress" },
-    { path: "billingAddress" },
-    { path: "purchaseBy" },
-    {
-      path: "product",
-    },
-  ]);
-
-  resp.status(200).json(new ApiResponse("", 200, order));
-});
-
-// order history of vendor
-
-export const orderHistoryOfVendor = asyncHandler(async (req, resp) => {
-  const { id } = req.query;
-  console.log("iddd", id);
-
-  if (!id) {
-    throw new ApiError("please provide id");
-  }
-
   const findOrder = await Order.aggregate([
+    {
+      $match: {
+        purchaseBy: new ObjectId(_id as string),
+      },
+    },
     {
       $lookup: {
         from: "products",
@@ -306,13 +256,7 @@ export const orderHistoryOfVendor = asyncHandler(async (req, resp) => {
       },
     },
     {
-      $match: {
-        product:{
-          $elemMatch:{
-            addedBy:new ObjectId(id as string)
-          }
-        }
-      },
+      $unwind: "$product",
     },
     {
       $lookup: {
@@ -352,8 +296,101 @@ export const orderHistoryOfVendor = asyncHandler(async (req, resp) => {
         },
       },
     },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, findOrder));
+});
+
+export const placedOrder = asyncHandler(async (req, resp) => {
+  const order = await Order.find({ status: "complete" }).populate([
+    { path: "deleveryAddress" },
+    { path: "billingAddress" },
+    { path: "purchaseBy" },
     {
-      $unwind: "$info",
+      path: "product",
+      populate: { path: "addedBy" },
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, order));
+});
+
+export const cancledOrder = asyncHandler(async (req, resp) => {
+  const order = await Order.find({ status: "cancled" }).populate([
+    { path: "deleveryAddress" },
+    { path: "billingAddress" },
+    { path: "purchaseBy" },
+    {
+      path: "product",
+    },
+  ]);
+
+  resp.status(200).json(new ApiResponse("", 200, order));
+});
+
+// order history of vendor
+
+export const orderHistoryOfVendor = asyncHandler(async (req, resp) => {
+  const { id } = req.query;
+
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+
+  const findOrder = await Order.aggregate([
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    {
+      $unwind: "$product",
+    },
+    {
+      $match: {
+        "product.addedBy": new ObjectId(id as string),
+      },
+    },
+    {
+      $lookup: {
+        from: "addresses",
+        localField: "deleveryAddress",
+        foreignField: "_id",
+        as: "deleveryAddress",
+      },
+    },
+    {
+      $lookup: {
+        from: "addresses",
+        localField: "billingAddress",
+        foreignField: "_id",
+        as: "billingAddress",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "purchaseBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $unwind: "$deleveryAddress",
+    },
+    {
+      $unwind: "$billingAddress",
+    },
+    {
+      $group: {
+        _id: "$status",
+        info: {
+          $push: "$$ROOT",
+        },
+      },
     },
   ]);
 

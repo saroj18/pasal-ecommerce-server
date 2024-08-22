@@ -13,6 +13,7 @@ export interface OrderType extends Document {
   deleveryCharge: number;
   reviewed: boolean;
   productQty: number;
+  cartInfo: any[];
 }
 
 const OrderSchema: Schema<OrderType> = new Schema(
@@ -68,9 +69,8 @@ const OrderSchema: Schema<OrderType> = new Schema(
       required: true,
       default: false,
     },
-    productQty: {
-      type: Number,
-      default: 1,
+    cartInfo: {
+      type: [],
     },
   },
   {

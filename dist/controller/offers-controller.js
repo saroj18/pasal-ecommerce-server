@@ -16,20 +16,24 @@ import { OfferZodSchema } from "../zodschema/offers/offer.js";
 export const createOffer = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { name, discount, products } = req.body;
-    console.log("sora>>>", products);
     const validate = OfferZodSchema.safeParse({ name, discount, products });
     if (!validate.success) {
         const error = errorFormatter((_a = validate.error) === null || _a === void 0 ? void 0 : _a.format());
         resp.status(400).json({ success: false, error });
         return;
     }
-    yield Product.updateMany({ _id: { $in: products } }, {
-        $set: {
-            priceAfterDiscount: {
-                $subtract: ["$price", { $multiply: ["$price", discount / 100] }],
+    const product = yield Product.find({ _id: { $in: products } });
+    product.forEach((element) => __awaiter(void 0, void 0, void 0, function* () {
+        yield Product.findByIdAndUpdate(element._id, {
+            $set: {
+                discount: discount,
+                offer: true,
+                priceAfterDiscount: element.price - (element.price * discount) / 100,
             },
-        },
-    });
+        }, {
+            runValidators: true,
+        });
+    }));
     const offer = yield Offer.create({
         name,
         discount,
@@ -40,23 +44,31 @@ export const createOffer = asyncHandler((req, resp) => __awaiter(void 0, void 0,
         .json(new ApiResponse("Order Created Successfully", 200, offer));
 }));
 export const getAllOffers = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const offers = yield Offer.find().populate("product");
+    const offers = yield Offer.find().populate({
+        path: "product",
+        populate: {
+            path: "review",
+        },
+    });
     resp.status(200).json(new ApiResponse("", 200, offers));
 }));
 export const deleteOffers = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.query;
-    const product = yield Offer.findById(id);
-    yield Product.updateMany({ _id: { $in: product.product } }, {
-        $set: {
-            offerDiscount: {
-                $subtract: [
-                    "$price",
-                    { $multiply: ["$price", product.discount / 100] },
-                ],
+    const offer = yield Offer.findById(id);
+    let data = yield Product.find({ _id: { $in: offer.product } });
+    console.log("pro", data);
+    data.forEach((element) => __awaiter(void 0, void 0, void 0, function* () {
+        yield Product.findByIdAndUpdate(element._id, {
+            $set: {
+                discount: element.userDiscount,
+                offer: false,
+                priceAfterDiscount: element.price - (element.price * element.userDiscount) / 100,
             },
-        },
-    });
-    const offer = yield Offer.findByIdAndDelete(id);
+        }, {
+            runValidators: true,
+        });
+    }));
+    yield Offer.findByIdAndDelete(id);
     if (!offer) {
         resp.status(404).json(new ApiResponse("Offer not found", 404, null));
         return;

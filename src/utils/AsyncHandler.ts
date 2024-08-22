@@ -11,6 +11,7 @@ export const asyncHandler = (func: FunctionType) => {
     try {
       await func(req, resp, next);
     } catch (error: any) {
+      console.log(error.stack);
       next(error);
     }
   };
