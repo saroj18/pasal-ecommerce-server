@@ -16,7 +16,16 @@ export const createOffer = asyncHandler(async (req, resp) => {
     return;
   }
 
-  await Product.updateMany({ _id: { $in: products } }, { $set: { discount } });
+  await Product.updateMany(
+    { _id: { $in: products } },
+    {
+      $set: {
+        priceAfterDiscount: {
+          $subtract: ["$price", { $multiply: ["$price", discount / 100] }],
+        },
+      },
+    }
+  );
 
   const offer = await Offer.create({
     name,
@@ -35,6 +44,20 @@ export const getAllOffers = asyncHandler(async (req, resp) => {
 
 export const deleteOffers = asyncHandler(async (req, resp) => {
   const { id } = req.query;
+  const product = await Offer.findById(id);
+  await Product.updateMany(
+    { _id: { $in: product.product } },
+    {
+      $set: {
+        offerDiscount: {
+          $subtract: [
+            "$price",
+            { $multiply: ["$price", product.discount / 100] },
+          ],
+        },
+      },
+    }
+  );
   const offer = await Offer.findByIdAndDelete(id);
   if (!offer) {
     resp.status(404).json(new ApiResponse("Offer not found", 404, null));
@@ -45,4 +68,3 @@ export const deleteOffers = asyncHandler(async (req, resp) => {
     .status(200)
     .json(new ApiResponse("Offer Deleted Successfully", 200, null));
 });
-

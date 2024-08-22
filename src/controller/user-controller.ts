@@ -18,7 +18,7 @@ import { Order } from "../model/order.model.js";
 import { Shop } from "../model/shop-details-model.js";
 import { ObjectId } from "mongodb";
 
-const generateAccessTokenAndRefreshToken = async (
+export const generateAccessTokenAndRefreshToken = async (
   id: Schema.Types.ObjectId
 ) => {
   const userInfo = await User.findById(id);

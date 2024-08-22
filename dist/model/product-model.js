@@ -79,6 +79,10 @@ const productSchema = new Schema({
         type: Number,
         default: 0,
     },
+    offerDiscount: {
+        type: Number,
+        default: null,
+    },
 }, {
     timestamps: true,
 });

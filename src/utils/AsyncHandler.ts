@@ -1,15 +1,17 @@
-import { NextFunction, Request, Response } from "express"
-import { ApiError } from "./ApiError.js"
+import { NextFunction, Request, Response } from "express";
 
-export type FunctionType=(req:Request,resp:Response,next:NextFunction)=>Promise<void>
+export type FunctionType = (
+  req: Request,
+  resp: Response,
+  next: NextFunction
+) => Promise<void>;
 
-export const asyncHandler=(func:FunctionType)=>{
-    return async(req:Request,resp:Response,next:NextFunction)=>{
-        try {
-           await func(req,resp,next)
-        } catch (error:any) {
-            console.log(error.stack)
-            next(error)
-        }
+export const asyncHandler = (func: FunctionType) => {
+  return async (req: Request, resp: Response, next: NextFunction) => {
+    try {
+      await func(req, resp, next);
+    } catch (error: any) {
+      next(error);
     }
-}
+  };
+};

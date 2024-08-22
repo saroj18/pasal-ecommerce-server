@@ -8,31 +8,65 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { User } from "../model/user.model.js";
-import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
-export const Auth = asyncHandler((req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { accessToken } = req.cookies;
-    console.log(accessToken);
-    if (!accessToken) {
-        resp.status(401);
-        throw new ApiError("please login first");
+import { generateAccessTokenAndRefreshToken } from "../controller/user-controller.js";
+export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { accessToken } = req.cookies;
+        // console.log(accessToken);
+        if (!accessToken) {
+            resp.status(401);
+            throw new ApiError("please login first");
+        }
+        const decodAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE);
+        if (!decodAccessToken) {
+            resp.status(401);
+            throw new Error("Invalid token");
+        }
+        const findUser = yield User.findById(decodAccessToken._id);
+        if (!findUser) {
+            resp.status(404);
+            throw new ApiError("User not found");
+        }
+        if (findUser.block) {
+            throw new ApiError("Your are blocked by Admin");
+        }
+        req.user = findUser._id;
+        next();
     }
-    const decodAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE);
-    console.log("dd", decodAccessToken);
-    if (!decodAccessToken) {
-        resp.status(401);
-        throw new Error("Invalid token");
+    catch (error) {
+        try {
+            if (error.name == "TokenExpiredError") {
+                const { refreshToken } = req.cookies;
+                if (!refreshToken) {
+                    throw new Error("please provide refreshToken");
+                }
+                const decode = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRETE);
+                const findUser = yield User.findById(decode._id);
+                if (!findUser) {
+                    throw new Error("user not found");
+                }
+                const { accessToken, refreshToken: refresh } = yield generateAccessTokenAndRefreshToken(findUser._id);
+                findUser.refreshToken = refresh;
+                yield findUser.save();
+                const options = {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+                    path: "/",
+                };
+                resp.cookie("accessToken", accessToken, options);
+                resp.cookie("refreshToken", refresh, options);
+                req.cookies.accessToken = accessToken;
+                req.cookies.refreshToken = refresh;
+                yield Auth(req, resp, next);
+                return;
+            }
+        }
+        catch (err) {
+            return resp.status(400).json({ success: false, error: err.message });
+        }
+        return resp.status(400).json({ success: false, error: error.message });
     }
-    const findUser = yield User.findById(decodAccessToken._id);
-    if (!findUser) {
-        resp.status(404);
-        throw new ApiError("User not found");
-    }
-    // if (findUser.block) {
-    //   throw new ApiError("Your are blocked by Admin");
-    // }
-    console.log("sora", findUser);
-    req.user = findUser._id;
-    next();
-}));
+});

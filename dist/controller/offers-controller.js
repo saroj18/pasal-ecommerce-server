@@ -23,7 +23,13 @@ export const createOffer = asyncHandler((req, resp) => __awaiter(void 0, void 0,
         resp.status(400).json({ success: false, error });
         return;
     }
-    yield Product.updateMany({ _id: { $in: products } }, { $set: { discount } });
+    yield Product.updateMany({ _id: { $in: products } }, {
+        $set: {
+            priceAfterDiscount: {
+                $subtract: ["$price", { $multiply: ["$price", discount / 100] }],
+            },
+        },
+    });
     const offer = yield Offer.create({
         name,
         discount,
@@ -39,6 +45,17 @@ export const getAllOffers = asyncHandler((req, resp) => __awaiter(void 0, void 0
 }));
 export const deleteOffers = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.query;
+    const product = yield Offer.findById(id);
+    yield Product.updateMany({ _id: { $in: product.product } }, {
+        $set: {
+            offerDiscount: {
+                $subtract: [
+                    "$price",
+                    { $multiply: ["$price", product.discount / 100] },
+                ],
+            },
+        },
+    });
     const offer = yield Offer.findByIdAndDelete(id);
     if (!offer) {
         resp.status(404).json(new ApiResponse("Offer not found", 404, null));

@@ -19,7 +19,7 @@ import jwt from "jsonwebtoken";
 import { Order } from "../model/order.model.js";
 import { Shop } from "../model/shop-details-model.js";
 import { ObjectId } from "mongodb";
-const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
+export const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
     if (!userInfo) {
         throw new ApiError("user not found");
