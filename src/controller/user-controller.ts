@@ -144,6 +144,7 @@ export const userVerify = asyncHandler(async (req, resp) => {
       defaultAddress,
       location,
     });
+    console.log(validateInfo);
 
     if (validateInfo.error) {
       const error = errorFormatter(validateInfo.error?.format());

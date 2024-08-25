@@ -170,16 +170,16 @@ export const orderPlacedBySeller = asyncHandler((req, resp) => __awaiter(void 0,
         },
         new: true,
     });
-    let data = yield Product.updateMany({ _id: { $in: orderPlaced === null || orderPlaced === void 0 ? void 0 : orderPlaced.product } }, {
-        $inc: {
-            stock: -orderPlaced.productQty,
-        },
-    }, {
-        new: true,
-    });
+    orderPlaced.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
+        yield Product.updateOne({ _id: ele.product._id }, {
+            $inc: {
+                stock: -ele.productCount,
+            },
+        });
+    }));
     resp
         .status(200)
-        .json(new ApiResponse("order placed successfully", 200, orderPlaced));
+        .json(new ApiResponse("order placed successfully", 200, null));
 }));
 //order cancle by seller
 export const orderCancledBySeller = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {

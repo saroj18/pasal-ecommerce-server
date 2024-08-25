@@ -117,6 +117,7 @@ export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
             defaultAddress,
             location,
         });
+        console.log(validateInfo);
         if (validateInfo.error) {
             const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
             resp.status(400).json({ success: false, error });

@@ -47,7 +47,6 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
     status: "COMPLETE",
     ref_id: getStatusInfo.ref_id,
   });
-  console.log("ks", productOrder.cartInfo);
 
   await Cart.deleteMany({ addedBy: _id });
 

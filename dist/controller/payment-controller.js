@@ -43,7 +43,6 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
         status: "COMPLETE",
         ref_id: getStatusInfo.ref_id,
     });
-    console.log("ks", productOrder.cartInfo);
     yield Cart.deleteMany({ addedBy: _id });
     productOrder.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
         yield Product.findByIdAndUpdate(ele.product._id, {

@@ -198,21 +198,20 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
     new: true,
   });
 
-  let data = await Product.updateMany(
-    { _id: { $in: orderPlaced?.product } },
-    {
-      $inc: {
-        stock: -orderPlaced.productQty,
-      },
-    },
-    {
-      new: true,
-    }
-  );
+  orderPlaced.cartInfo.forEach(async (ele) => {
+    await Product.updateOne(
+      { _id: ele.product._id },
+      {
+        $inc: {
+          stock: -ele.productCount,
+        },
+      }
+    );
+  });
 
   resp
     .status(200)
-    .json(new ApiResponse("order placed successfully", 200, orderPlaced));
+    .json(new ApiResponse("order placed successfully", 200, null));
 });
 
 //order cancle by seller

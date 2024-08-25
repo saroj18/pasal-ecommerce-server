@@ -70,11 +70,36 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
     if (!id) {
         throw new ApiError("you are unauthorized person");
     }
-    const findProducts = yield Product.find({ addedBy: id }).populate({
-        path: "addedBy",
-        select: "-refreshToken -password",
-    });
-    console.log(findProducts);
+    // const findProducts = await Product.find({ addedBy: id }).populate({
+    //   path: "addedBy",
+    //   select: "-refreshToken -password",
+    // });
+    // console.log(findProducts);
+    const findProducts = yield Product.aggregate([
+        {
+            $match: {
+                addedBy: new ObjectId(id),
+            },
+        },
+        {
+            $lookup: {
+                from: "shops",
+                localField: "addedBy",
+                foreignField: "_id",
+                as: "addedBy",
+            },
+        },
+        {
+            $unwind: "$addedBy",
+        },
+        {
+            $addFields: {
+                totalSaleAmount: {
+                    $multiply: ["$totalSale", "$priceAfterDiscount"],
+                },
+            },
+        },
+    ]);
     resp.status(200).json(new ApiResponse("", 200, findProducts));
 }));
 //get all products for all users
@@ -171,6 +196,7 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
                 starArray: { $first: "$starArray" },
                 isOnWishList: { $first: "$isOnWishList" },
                 offer: { $first: "$offer" },
+                totalSale: { $first: "$totalSale" },
                 review: {
                     $push: "$review",
                 },
