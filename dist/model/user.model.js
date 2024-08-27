@@ -76,6 +76,14 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    socketInfo: {
+        type: Schema.Types.Mixed,
+        default: null,
+    },
+    online: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true,
     validateBeforeSave: true,

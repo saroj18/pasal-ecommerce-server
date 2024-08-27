@@ -1,9 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { z } from "zod";
+import WebSocket from "ws";
 
-interface Customer extends Document {
+export interface Customer extends Document {
   fullname: string;
   email: string;
   password: string;
@@ -22,6 +22,8 @@ interface Customer extends Document {
   buyProduct: Schema.Types.ObjectId;
   signUpAs: string;
   block: boolean;
+  socketInfo: WebSocket;
+  online: boolean;
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -88,6 +90,14 @@ const UserSchema: Schema<Customer> = new Schema(
       trim: true,
     },
     block: {
+      type: Boolean,
+      default: false,
+    },
+    socketInfo: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    online: {
       type: Boolean,
       default: false,
     },
