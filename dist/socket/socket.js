@@ -17,29 +17,34 @@ const socketInfo = new Map();
 export const socketConnection = (server) => {
     const socketServer = new WebSocketServer({ server });
     socketServer.on("connection", (socket, req) => __awaiter(void 0, void 0, void 0, function* () {
-        const token = cookie.parse(req.headers.cookie);
-        if (!token) {
-            throw new ApiError("please provide token");
-        }
-        const decode = jwt.verify(token.accessToken, process.env.ACCESS_TOKEN_SECRETE);
-        const user = yield User.findById(decode._id);
-        if (!user) {
-            socket.addEventListener("error", () => {
-                throw new Error("user not found");
+        try {
+            const token = cookie.parse(req.headers.cookie);
+            if (!token) {
+                throw new ApiError("please provide token");
+            }
+            const decode = jwt.verify(token.accessToken, process.env.ACCESS_TOKEN_SECRETE);
+            const user = yield User.findById(decode._id);
+            if (!user) {
+                socket.addEventListener("error", () => {
+                    throw new Error("user not found");
+                });
+            }
+            socketInfo.set(user._id.toString(), socket);
+            user.online = true;
+            yield user.save();
+            socket.on("close", () => __awaiter(void 0, void 0, void 0, function* () {
+                user.online = false;
+                yield user.save();
+            }));
+            socket.on("message", (data) => {
+                let socketData = data.toString();
+                socketData = JSON.parse(socketData);
+                socketData.sender = user._id;
+                socketController(socketInfo.get(socketData.receiver), socketData);
             });
         }
-        socketInfo.set(user._id.toString(), socket);
-        user.online = true;
-        yield user.save();
-        socket.on("close", () => __awaiter(void 0, void 0, void 0, function* () {
-            user.online = false;
-            yield user.save();
-        }));
-        socket.on("message", (data) => {
-            let socketData = data.toString();
-            socketData = JSON.parse(socketData);
-            socketData.sender = user._id;
-            socketController(socketInfo.get(socketData.receiver), socketData);
-        });
+        catch (error) {
+            console.log(error.message);
+        }
     }));
 };

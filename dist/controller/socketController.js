@@ -9,6 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { User } from "../model/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { Chat } from "../model/chat-model.js";
+import { Product } from "../model/product-model.js";
 export const socketController = (socket, data) => {
     switch (data.type) {
         case "typing":
@@ -33,18 +35,32 @@ const startTyping = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, 
     }
     catch (error) { }
 });
-const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { sender, receiver, message, type }) {
+const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { sender, receiver, message, type, product }) {
     try {
         const findUser = yield User.findById(receiver);
         if (!findUser) {
             throw new ApiError("user not found");
         }
         console.log("user", message);
+        const saveChat = yield Chat.create({
+            sender,
+            message,
+            type,
+            receiver,
+            product,
+        });
+        if (!saveChat) {
+            throw new ApiError("failed to save on db");
+        }
+        const findProduct = yield Product.findById(product);
         socket.send(JSON.stringify({
             sender,
             message,
             type,
+            product: findProduct,
         }));
     }
-    catch (error) { }
+    catch (error) {
+        console.log(error.message);
+    }
 });

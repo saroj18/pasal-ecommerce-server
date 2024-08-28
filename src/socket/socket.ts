@@ -12,36 +12,40 @@ export const socketConnection = (server: Server) => {
   const socketServer = new WebSocketServer({ server });
 
   socketServer.on("connection", async (socket, req) => {
-    const token = cookie.parse(req.headers.cookie);
-    if (!token) {
-      throw new ApiError("please provide token");
-    }
+    try {
+      const token = cookie.parse(req.headers.cookie);
+      if (!token) {
+        throw new ApiError("please provide token");
+      }
 
-    const decode = jwt.verify(
-      token.accessToken,
-      process.env.ACCESS_TOKEN_SECRETE
-    ) as JwtPayload;
+      const decode = jwt.verify(
+        token.accessToken,
+        process.env.ACCESS_TOKEN_SECRETE
+      ) as JwtPayload;
 
-    const user = await User.findById(decode._id);
+      const user = await User.findById(decode._id);
 
-    if (!user) {
-      socket.addEventListener("error", () => {
-        throw new Error("user not found");
-      });
-    }
-    socketInfo.set(user._id.toString(), socket);
-    user.online = true;
-    await user.save();
-
-    socket.on("close", async () => {
-      user.online = false;
+      if (!user) {
+        socket.addEventListener("error", () => {
+          throw new Error("user not found");
+        });
+      }
+      socketInfo.set(user._id.toString(), socket);
+      user.online = true;
       await user.save();
-    });
-    socket.on("message", (data) => {
-      let socketData: any = data.toString();
-      socketData = JSON.parse(socketData);
-      socketData.sender = user._id;
-      socketController(socketInfo.get(socketData.receiver), socketData);
-    });
+
+      socket.on("close", async () => {
+        user.online = false;
+        await user.save();
+      });
+      socket.on("message", (data) => {
+        let socketData: any = data.toString();
+        socketData = JSON.parse(socketData);
+        socketData.sender = user._id;
+        socketController(socketInfo.get(socketData.receiver), socketData);
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
   });
 };
