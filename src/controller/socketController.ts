@@ -44,7 +44,9 @@ const startTyping = async (
         type,
       })
     );
-  } catch (error) {}
+  } catch (error) {
+    console.log(error.message)
+  }
 };
 
 const chatWithVendorAndCustomer = async (
@@ -57,7 +59,6 @@ const chatWithVendorAndCustomer = async (
     if (!findUser) {
       throw new ApiError("user not found");
     }
-    console.log("user", message);
 
     const saveChat = await Chat.create({
       sender,

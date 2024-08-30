@@ -7,6 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import mongoose from "mongoose";
+import { Order } from "../model/order.model.js";
+import { Product } from "../model/product-model.js";
 import { Shop } from "../model/shop-details-model.js";
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -14,6 +17,7 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 import { uploadImageOnCloudinary } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
 import { ShopVerifyZodSchema } from "../zodschema/user/user-signup.js";
+import { ObjectId } from "mongodb";
 export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const [yourImage, documentImage, shopImage] = req.files;
@@ -58,4 +62,76 @@ export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     resp
         .status(200)
         .json(new ApiResponse("Shop created successfully", 200, findUser));
+}));
+export const sellerDashboardData = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const totalProducts = yield Product.aggregate([
+        {
+            $match: {
+                addedBy: new mongoose.Types.ObjectId(req.shopId),
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalSaleAmount: {
+                    $sum: {
+                        $multiply: ["$totalSale", "$priceAfterDiscount"],
+                    },
+                },
+                totalSale: {
+                    $sum: "$totalSale",
+                },
+                totalProducts: { $sum: 1 },
+                brands: {
+                    $addToSet: "$brand",
+                },
+                category: {
+                    $addToSet: "$category",
+                },
+            },
+        },
+        {
+            $project: {
+                totalSaleAmount: 1,
+                totalSale: 1,
+                totalProducts: 1,
+                totalBrands: { $size: "$brands" },
+                totalCategory: { $size: "$category" },
+            },
+        },
+    ]);
+    const totalOrders = yield Order.aggregate([
+        {
+            $match: {
+                status: "complete",
+            },
+        },
+        {
+            $lookup: {
+                from: "products",
+                localField: "product",
+                foreignField: "_id",
+                as: "product",
+            },
+        },
+        {
+            $match: {
+                product: {
+                    $elemMatch: {
+                        addedBy: new ObjectId(req.shopId),
+                    },
+                },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+            },
+        },
+    ]);
+    resp.status(200).json(new ApiResponse("", 200, {
+        products: totalProducts[0],
+        orders: totalOrders[0],
+    }));
 }));

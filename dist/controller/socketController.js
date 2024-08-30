@@ -33,7 +33,9 @@ const startTyping = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, 
             type,
         }));
     }
-    catch (error) { }
+    catch (error) {
+        console.log(error.message);
+    }
 });
 const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { sender, receiver, message, type, product }) {
     try {
@@ -41,7 +43,6 @@ const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1,
         if (!findUser) {
             throw new ApiError("user not found");
         }
-        console.log("user", message);
         const saveChat = yield Chat.create({
             sender,
             message,
