@@ -1,5 +1,6 @@
 import { esewaOrderForm } from "../helper/esewaOrderForm.js";
 import { Cart } from "../model/cart-model.js";
+import { Order } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
 import { WishList } from "../model/wishlist-model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -451,4 +452,61 @@ export const getAllMyProducts = asyncHandler(async (req, resp) => {
   const findProduct = await Product.find({ addedBy: id || req.shopId });
 
   resp.json(new ApiResponse("", 200, findProduct));
+});
+
+// for bestselling product on home page
+export const bestSellingProducts = asyncHandler(async (req, resp) => {
+  const product = await Product.find()
+    .populate("review")
+    .sort({ totalSale: -1 })
+    .limit(8);
+
+  resp.status(200).json(new ApiResponse("", 200, product));
+});
+
+//get product for our popular product field on home page
+export const suggestRandomProducts = asyncHandler(async (req, resp) => {
+  const product = await Order.aggregate([
+    {
+      $match: {
+        purchaseBy: req.user,
+      },
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    {
+      $unwind: "$product",
+    },
+
+    {
+      $group: {
+        _id: "$product._id",
+        category: { $first: "$product.category" },
+      },
+    },
+  ]);
+
+  const category = product
+    .map((ele) => {
+      return ele.category;
+    })
+    .filter((ele, index, arr) => {
+      return index === arr.indexOf(ele);
+    });
+
+  const allProduct = await Product.find({
+    category: {
+      $in: category,
+    },
+  })
+    .populate("review")
+    .limit(8);
+
+  resp.status(200).json(new ApiResponse("", 200, allProduct));
 });

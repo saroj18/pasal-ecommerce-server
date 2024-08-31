@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addOnWishlist,
   addProduct,
+  bestSellingProducts,
   deleteProduct,
   deleteWishListProduct,
   getAllMyProducts,
@@ -9,6 +10,7 @@ import {
   getInventoryOfProducts,
   getSingleProduct,
   getWishListProduct,
+  suggestRandomProducts,
   updateProduct,
   wishListAndCartCount,
 } from "../../controller/product-controller.js";
@@ -29,6 +31,8 @@ productRouter
 productRouter.route("/inventory").get(sellerAuth, getInventoryOfProducts);
 productRouter.route("/cartandwishlist/count").get(Auth, wishListAndCartCount);
 productRouter.route("/").get(getAllProducts);
+productRouter.route("/bestselling").get(bestSellingProducts);
+productRouter.route("/randomproducts").get(Auth, suggestRandomProducts);
 productRouter.route("/myproduct").get(sellerAuth, getAllMyProducts);
 productRouter
   .route("/cart")

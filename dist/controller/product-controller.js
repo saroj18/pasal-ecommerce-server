@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Cart } from "../model/cart-model.js";
+import { Order } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
 import { WishList } from "../model/wishlist-model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -372,4 +373,54 @@ export const getAllMyProducts = asyncHandler((req, resp) => __awaiter(void 0, vo
     const { id } = req.query;
     const findProduct = yield Product.find({ addedBy: id || req.shopId });
     resp.json(new ApiResponse("", 200, findProduct));
+}));
+// for bestselling product on home page
+export const bestSellingProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const product = yield Product.find()
+        .populate("review")
+        .sort({ totalSale: -1 })
+        .limit(8);
+    resp.status(200).json(new ApiResponse("", 200, product));
+}));
+//get product for our popular product field on home page
+export const suggestRandomProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const product = yield Order.aggregate([
+        {
+            $match: {
+                purchaseBy: req.user,
+            },
+        },
+        {
+            $lookup: {
+                from: "products",
+                localField: "product",
+                foreignField: "_id",
+                as: "product",
+            },
+        },
+        {
+            $unwind: "$product",
+        },
+        {
+            $group: {
+                _id: "$product._id",
+                category: { $first: "$product.category" },
+            },
+        },
+    ]);
+    const category = product
+        .map((ele) => {
+        return ele.category;
+    })
+        .filter((ele, index, arr) => {
+        return index === arr.indexOf(ele);
+    });
+    const allProduct = yield Product.find({
+        category: {
+            $in: category,
+        },
+    })
+        .populate("review")
+        .limit(8);
+    resp.status(200).json(new ApiResponse("", 200, allProduct));
 }));
