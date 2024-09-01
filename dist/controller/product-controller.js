@@ -7,6 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import mongoose from "mongoose";
 import { Cart } from "../model/cart-model.js";
 import { Order } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
@@ -374,13 +375,40 @@ export const getAllMyProducts = asyncHandler((req, resp) => __awaiter(void 0, vo
     const findProduct = yield Product.find({ addedBy: id || req.shopId });
     resp.json(new ApiResponse("", 200, findProduct));
 }));
-// for bestselling product on home page
+// for bestselling product on home page and seller dashboard
 export const bestSellingProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const product = yield Product.find()
+    if (req.role == "customer") {
+        const product = yield Product.find()
+            .populate("review")
+            .sort({ totalSale: -1 })
+            .limit(8);
+        resp.status(200).json(new ApiResponse("", 200, product));
+        return;
+    }
+    const product = yield Product.find({ addedBy: req.shopId })
         .populate("review")
         .sort({ totalSale: -1 })
-        .limit(8);
-    resp.status(200).json(new ApiResponse("", 200, product));
+        .limit(5);
+    const topCategory = yield Product.aggregate([
+        {
+            $match: {
+                addedBy: new mongoose.Types.ObjectId(req.shopId),
+            },
+        },
+        {
+            $group: {
+                _id: "$category",
+                totalSale: {
+                    $sum: "$totalSale",
+                },
+            },
+        },
+        {
+            $limit: 5
+        }
+    ]);
+    console.log("sa", topCategory);
+    resp.status(200).json(new ApiResponse("", 200, { product, topCategory }));
 }));
 //get product for our popular product field on home page
 export const suggestRandomProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {

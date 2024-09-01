@@ -33,6 +33,7 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
             throw new ApiError("Your are blocked by Admin");
         }
         req.user = findUser._id;
+        req.role = 'customer';
         next();
     }
     catch (error) {

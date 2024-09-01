@@ -35,6 +35,7 @@ export const sellerAuth = (req, resp, next) => __awaiter(void 0, void 0, void 0,
         }
         req.user = findUser._id;
         req.shopId = shopId;
+        req.role = 'seller';
         next();
     }
     catch (error) {

@@ -45,6 +45,7 @@ export const Auth = async (
       throw new ApiError("Your are blocked by Admin");
     }
     req.user = findUser._id;
+    req.role='customer'
     next();
   } catch (error) {
     try {

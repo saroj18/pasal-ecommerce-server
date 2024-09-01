@@ -14,12 +14,12 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 export const getAllChatForCustomerAndVendor = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.query;
     console.log(">>", id);
-    console.log(">>", req.user._id);
+    console.log(">>tttt", req.user);
     const chats = yield Chat.find({
         type: "customer_and_vendor_chat",
         $or: [
-            { $and: [{ sender: req.user._id }, { receiver: id }] },
-            { $and: [{ sender: id }, { receiver: req.user._id }] },
+            { $and: [{ sender: req.user }, { receiver: id }] },
+            { $and: [{ sender: id }, { receiver: req.user }] },
         ],
     });
     if (!chats) {

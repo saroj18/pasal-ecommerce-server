@@ -58,6 +58,7 @@ const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1,
             sender,
             message,
             type,
+            receiver,
             product: findProduct,
         }));
     }

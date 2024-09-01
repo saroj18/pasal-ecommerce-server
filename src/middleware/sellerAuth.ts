@@ -50,6 +50,7 @@ export const sellerAuth = async (
     }
     req.user = findUser._id;
     req.shopId = shopId;
+    req.role='seller'
     next();
   } catch (error) {
     try {

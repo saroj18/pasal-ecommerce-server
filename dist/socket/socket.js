@@ -17,6 +17,7 @@ const socketInfo = new Map();
 export const socketConnection = (server) => {
     const socketServer = new WebSocketServer({ server });
     socketServer.on("connection", (socket, req) => __awaiter(void 0, void 0, void 0, function* () {
+        console.log("new client add");
         try {
             const token = cookie.parse(req.headers.cookie);
             if (!token) {

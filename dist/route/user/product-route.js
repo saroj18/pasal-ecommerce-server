@@ -11,7 +11,7 @@ productRouter
 productRouter.route("/inventory").get(sellerAuth, getInventoryOfProducts);
 productRouter.route("/cartandwishlist/count").get(Auth, wishListAndCartCount);
 productRouter.route("/").get(getAllProducts);
-productRouter.route("/bestselling").get(bestSellingProducts);
+productRouter.route("/bestselling").get(sellerAuth, bestSellingProducts);
 productRouter.route("/randomproducts").get(Auth, suggestRandomProducts);
 productRouter.route("/myproduct").get(sellerAuth, getAllMyProducts);
 productRouter

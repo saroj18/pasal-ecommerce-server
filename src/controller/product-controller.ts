@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { esewaOrderForm } from "../helper/esewaOrderForm.js";
 import { Cart } from "../model/cart-model.js";
 import { Order } from "../model/order.model.js";
@@ -454,14 +455,44 @@ export const getAllMyProducts = asyncHandler(async (req, resp) => {
   resp.json(new ApiResponse("", 200, findProduct));
 });
 
-// for bestselling product on home page
+// for bestselling product on home page and seller dashboard
 export const bestSellingProducts = asyncHandler(async (req, resp) => {
-  const product = await Product.find()
+  if (req.role == "customer") {
+    const product = await Product.find()
+      .populate("review")
+      .sort({ totalSale: -1 })
+      .limit(8);
+    resp.status(200).json(new ApiResponse("", 200, product));
+    return;
+  }
+
+  const product = await Product.find({ addedBy: req.shopId })
     .populate("review")
     .sort({ totalSale: -1 })
-    .limit(8);
+    .limit(5);
 
-  resp.status(200).json(new ApiResponse("", 200, product));
+  const topCategory = await Product.aggregate([
+    {
+      $match: {
+        addedBy: new mongoose.Types.ObjectId(req.shopId),
+      },
+    },
+    {
+      $group: {
+        _id: "$category",
+        totalSale: {
+          $sum: "$totalSale",
+        },
+      },
+    },
+    {
+      $limit:5
+    }
+  ]);
+
+  console.log("sa", topCategory);
+
+  resp.status(200).json(new ApiResponse("", 200, { product, topCategory }));
 });
 
 //get product for our popular product field on home page

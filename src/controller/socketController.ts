@@ -45,7 +45,7 @@ const startTyping = async (
       })
     );
   } catch (error) {
-    console.log(error.message)
+    console.log(error.message);
   }
 };
 
@@ -79,6 +79,7 @@ const chatWithVendorAndCustomer = async (
         sender,
         message,
         type,
+        receiver,
         product: findProduct,
       })
     );

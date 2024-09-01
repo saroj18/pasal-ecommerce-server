@@ -12,6 +12,7 @@ export const socketConnection = (server: Server) => {
   const socketServer = new WebSocketServer({ server });
 
   socketServer.on("connection", async (socket, req) => {
+    console.log("new client add");
     try {
       const token = cookie.parse(req.headers.cookie);
       if (!token) {
