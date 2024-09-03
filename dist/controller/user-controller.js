@@ -89,7 +89,7 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         path: "/",
-        // sameSite: "none",
+        sameSite: "none",
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     };
     if (user && user.shopVerify) {
@@ -117,7 +117,6 @@ export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
             defaultAddress,
             location,
         });
-        console.log(validateInfo);
         if (validateInfo.error) {
             const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
             resp.status(400).json({ success: false, error });

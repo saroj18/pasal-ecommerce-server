@@ -101,7 +101,7 @@ export const loginUser = asyncHandler(async (req, resp) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    // sameSite: "none",
+    sameSite: "none",
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
   };
   if (user && user.shopVerify) {
@@ -113,6 +113,7 @@ export const loginUser = asyncHandler(async (req, resp) => {
   }
   resp.cookie("accessToken", accessToken, options);
   resp.cookie("refreshToken", refreshToken, options);
+
   resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
 });
 
@@ -144,7 +145,6 @@ export const userVerify = asyncHandler(async (req, resp) => {
       defaultAddress,
       location,
     });
-    console.log(validateInfo);
 
     if (validateInfo.error) {
       const error = errorFormatter(validateInfo.error?.format());

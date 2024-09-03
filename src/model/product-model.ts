@@ -21,6 +21,7 @@ export interface Product extends Document {
   priceAfterDiscount: number;
   userDiscount: number;
   offer: boolean;
+  visitDate: Date[];
 }
 
 const productSchema: Schema<Product> = new Schema(
@@ -112,6 +113,12 @@ const productSchema: Schema<Product> = new Schema(
       type: Boolean,
       default: false,
     },
+    visitDate: [
+      {
+        type: Date,
+        required: true,
+      },
+    ],
   },
   {
     timestamps: true,

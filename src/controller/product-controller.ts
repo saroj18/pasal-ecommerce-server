@@ -231,6 +231,12 @@ export const getSingleProduct = asyncHandler(async (req, resp) => {
     throw new ApiError("product not found");
   }
 
+  await Product.findByIdAndUpdate(id, {
+    $push: {
+      visitDate: new Date(),
+    },
+  });
+
   const relatedProducts = await Product.find({
     category: findProduct[0].category,
   })
@@ -486,8 +492,13 @@ export const bestSellingProducts = asyncHandler(async (req, resp) => {
       },
     },
     {
-      $limit:5
-    }
+      $sort: {
+        totalSale: -1,
+      },
+    },
+    {
+      $limit: 5,
+    },
   ]);
 
   console.log("sa", topCategory);

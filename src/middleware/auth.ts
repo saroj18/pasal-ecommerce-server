@@ -19,6 +19,8 @@ export const Auth = async (
 ) => {
   try {
     const { accessToken } = req.cookies;
+    const token = req.headers.authorization;
+    console.log(token);
     // console.log(accessToken);
 
     if (!accessToken) {
@@ -45,7 +47,7 @@ export const Auth = async (
       throw new ApiError("Your are blocked by Admin");
     }
     req.user = findUser._id;
-    req.role='customer'
+    req.role = "customer";
     next();
   } catch (error) {
     try {

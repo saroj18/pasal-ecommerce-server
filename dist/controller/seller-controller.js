@@ -19,6 +19,7 @@ import { errorFormatter } from "../utils/errorFormater.js";
 import { ShopVerifyZodSchema } from "../zodschema/user/user-signup.js";
 import { ObjectId } from "mongodb";
 import dayjs from "dayjs";
+import { Review } from "../model/review-model.js";
 export const shopVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const [yourImage, documentImage, shopImage] = req.files;
@@ -128,7 +129,7 @@ export const sellerDashboardData = asyncHandler((req, resp) => __awaiter(void 0,
             $group: {
                 _id: null,
                 totalOrders: { $sum: 1 },
-                totalSaleAmount: { $sum: "$totalPrice" }
+                totalSaleAmount: { $sum: "$totalPrice" },
             },
         },
     ]);
@@ -139,6 +140,7 @@ export const sellerDashboardData = asyncHandler((req, resp) => __awaiter(void 0,
 }));
 export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { time } = req.body;
+    const { id } = req.query;
     const dateArray = [];
     if (time == "24hrs") {
         for (let i = 0; i < 24; i++) {
@@ -183,7 +185,7 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
             $match: {
                 product: {
                     $elemMatch: {
-                        addedBy: new ObjectId(req.shopId),
+                        addedBy: new ObjectId(id || req.shopId),
                     },
                 },
             },
@@ -210,7 +212,7 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
             $match: {
                 product: {
                     $elemMatch: {
-                        addedBy: new mongoose.Types.ObjectId(req.shopId),
+                        addedBy: new mongoose.Types.ObjectId(id || req.shopId),
                     },
                 },
                 status: "complete",
@@ -223,8 +225,34 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
             },
         },
     ]);
+    const visitors = yield Product.find({ addedBy: id || req.shopId });
+    const review = yield Review.aggregate([
+        {
+            $lookup: {
+                from: "products",
+                localField: "reviewProduct",
+                foreignField: "_id",
+                as: "product",
+            },
+        },
+        {
+            $unwind: "$product",
+        },
+        {
+            $match: {
+                "product.addedBy": new ObjectId(id || req.shopId),
+            },
+        },
+        {
+            $group: {
+                _id: "$createdAt",
+            },
+        },
+    ]);
     let dates = [];
     let dateforRevenue = [];
+    let dateForVisit = [];
+    let dateForReview = [];
     if (time == "24hrs") {
         dates = orders[0].dates.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
         dateforRevenue = totalRevenue.map((ele) => {
@@ -232,6 +260,14 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
                 date: dayjs(ele._id).format("YY-MM-DD HH"),
                 total: ele.amount[0],
             };
+        });
+        visitors.forEach((ele) => {
+            ele.visitDate.forEach((element) => {
+                dateForVisit.push(dayjs(element).format("YY-MM-DD HH"));
+            });
+        });
+        review.forEach((ele) => {
+            dateForReview.push(dayjs(ele._id).format("YY-MM-DD HH"));
         });
     }
     else {
@@ -241,6 +277,14 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
                 date: dayjs(ele._id).format("YY-MM-DD"),
                 total: ele.amount[0],
             };
+        });
+        visitors.forEach((ele) => {
+            ele.visitDate.forEach((element) => {
+                dateForVisit.push(dayjs(element).format("YY-MM-DD"));
+            });
+        });
+        review.forEach((ele) => {
+            dateForReview.push(dayjs(ele._id).format("YY-MM-DD"));
         });
     }
     const graphData = [];
@@ -253,12 +297,47 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
     });
     const revenueData = [];
     dateArray.forEach((ele) => {
-        var _a;
-        const findDate = dateforRevenue.filter((d) => d.date == ele);
+        let count = 0;
+        dateforRevenue
+            .filter((d) => d.date == ele)
+            .forEach((ele) => {
+            count += ele.total;
+        });
         revenueData.push({
             date: ele,
-            value: ((_a = findDate[0]) === null || _a === void 0 ? void 0 : _a.total) || 0,
+            value: count || 0,
         });
     });
-    resp.status(200).json(new ApiResponse("", 200, { graphData, revenueData }));
+    const totalVisitors = [];
+    dateArray.forEach((ele) => {
+        let count = 0;
+        dateForVisit
+            .filter((d) => d == ele)
+            .forEach(() => {
+            count++;
+        });
+        totalVisitors.push({
+            date: ele,
+            value: count || 0,
+        });
+    });
+    const totalReview = [];
+    dateArray.forEach((ele) => {
+        let count = 0;
+        dateForReview
+            .filter((d) => d == ele)
+            .forEach(() => {
+            count++;
+        });
+        totalReview.push({
+            date: ele,
+            value: count || 0,
+        });
+    });
+    resp.status(200).json(new ApiResponse("", 200, {
+        graphData,
+        revenueData,
+        totalVisitors,
+        totalReview,
+    }));
 }));

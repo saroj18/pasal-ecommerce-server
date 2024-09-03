@@ -14,6 +14,8 @@ import { generateAccessTokenAndRefreshToken } from "../controller/user-controlle
 export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { accessToken } = req.cookies;
+        const token = req.headers.authorization;
+        console.log(token);
         // console.log(accessToken);
         if (!accessToken) {
             resp.status(401);
@@ -33,7 +35,7 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
             throw new ApiError("Your are blocked by Admin");
         }
         req.user = findUser._id;
-        req.role = 'customer';
+        req.role = "customer";
         next();
     }
     catch (error) {

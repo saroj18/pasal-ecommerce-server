@@ -13,15 +13,13 @@ import { reviewRoute } from "./route/user/review-route.js";
 import { offerRoute } from "./route/user/offers.route.js";
 import http from "http";
 import { chatRoute } from "./route/user/chat.route.js";
+import dotenv from "dotenv";
+dotenv.config();
 export const app = express();
 export const server = http.createServer(app);
 app.use(express.json());
 app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "https://pasal-ecommerce-client.vercel.app",
-    ],
+    origin: process.env.ORIGIN,
     credentials: true,
 }));
 app.use(cookieParser());

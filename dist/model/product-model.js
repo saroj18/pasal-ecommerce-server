@@ -87,6 +87,12 @@ const productSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    visitDate: [
+        {
+            type: Date,
+            required: true,
+        },
+    ],
 }, {
     timestamps: true,
 });

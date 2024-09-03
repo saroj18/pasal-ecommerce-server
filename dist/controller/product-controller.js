@@ -209,6 +209,11 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
     if (!findProduct) {
         throw new ApiError("product not found");
     }
+    yield Product.findByIdAndUpdate(id, {
+        $push: {
+            visitDate: new Date(),
+        },
+    });
     const relatedProducts = yield Product.find({
         category: findProduct[0].category,
     })
@@ -404,8 +409,13 @@ export const bestSellingProducts = asyncHandler((req, resp) => __awaiter(void 0,
             },
         },
         {
-            $limit: 5
-        }
+            $sort: {
+                totalSale: -1,
+            },
+        },
+        {
+            $limit: 5,
+        },
     ]);
     console.log("sa", topCategory);
     resp.status(200).json(new ApiResponse("", 200, { product, topCategory }));
