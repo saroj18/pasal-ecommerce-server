@@ -21,7 +21,7 @@ export const sellerAuth = async (
 ) => {
   try {
     const { accessToken, shopId } = req.cookies;
-    // console.log(accessToken);
+    console.log(accessToken);
 
     if (!accessToken) {
       resp.status(401);

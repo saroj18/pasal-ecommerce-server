@@ -89,7 +89,7 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         path: "/",
-        sameSite: "none",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     };
     if (user && user.shopVerify) {

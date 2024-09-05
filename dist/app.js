@@ -14,6 +14,7 @@ import { offerRoute } from "./route/user/offers.route.js";
 import http from "http";
 import { chatRoute } from "./route/user/chat.route.js";
 import dotenv from "dotenv";
+import { adminRoute } from "./route/user/admin-route.js";
 dotenv.config();
 export const app = express();
 export const server = http.createServer(app);
@@ -33,6 +34,7 @@ app.use("/api/v1/deleveryperson", deleveryPersonRoute);
 app.use("/api/v1/review", reviewRoute);
 app.use("/api/v1/offers", offerRoute);
 app.use("/api/v1/chats", chatRoute);
+app.use("/api/v1/admin", adminRoute);
 app.use((err, req, resp, next) => {
     globalErrorHandler(err, resp);
 });

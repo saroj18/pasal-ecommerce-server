@@ -14,7 +14,7 @@ import { generateAccessTokenAndRefreshToken } from "../controller/user-controlle
 export const sellerAuth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { accessToken, shopId } = req.cookies;
-        // console.log(accessToken);
+        console.log(accessToken);
         if (!accessToken) {
             resp.status(401);
             throw new ApiError("please provide token first");

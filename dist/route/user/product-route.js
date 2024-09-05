@@ -4,6 +4,7 @@ import { upload } from "../../middleware/multer.js";
 import { sellerAuth } from "../../middleware/sellerAuth.js";
 import { addToCart, deleteCartProduct, getCartProducts, } from "../../controller/user-controller.js";
 import { Auth } from "../../middleware/auth.js";
+import { graphDataForAdminDashboard } from "../../controller/admin-controller.js";
 export const productRouter = Router();
 productRouter
     .route("/add")
@@ -12,6 +13,7 @@ productRouter.route("/inventory").get(sellerAuth, getInventoryOfProducts);
 productRouter.route("/cartandwishlist/count").get(Auth, wishListAndCartCount);
 productRouter.route("/").get(getAllProducts);
 productRouter.route("/bestselling").get(sellerAuth, bestSellingProducts);
+productRouter.route("/graphdataforadmin").get(Auth, graphDataForAdminDashboard);
 productRouter.route("/randomproducts").get(Auth, suggestRandomProducts);
 productRouter.route("/myproduct").get(sellerAuth, getAllMyProducts);
 productRouter

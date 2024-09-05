@@ -552,3 +552,5 @@ export const suggestRandomProducts = asyncHandler(async (req, resp) => {
 
   resp.status(200).json(new ApiResponse("", 200, allProduct));
 });
+
+
