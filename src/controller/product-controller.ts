@@ -553,4 +553,49 @@ export const suggestRandomProducts = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("", 200, allProduct));
 });
 
+export const filterProducts = asyncHandler(async (req, resp) => {
+  let { brand, rating, category, price } = req.body;
+  price = Number(price);
+  rating = rating && rating.split("");
+  console.log(rating);
+  let id = Number(req.query.id) || 1;
 
+  const product = await Product.aggregate([
+    {
+      $addFields: {
+        avgRating: { $avg: "$starArray" },
+      },
+    },
+    {
+      $match: {
+        ...(brand && { brand }),
+        ...(category && { category }),
+        ...(rating && {
+          avgRating: {
+            $gt: Number(rating[0]),
+            $lt: Number(rating[1]),
+          },
+        }),
+        ...(price && {
+          priceAfterDiscount: price == 25000 ? { $gt: price } : { $lt: price },
+        }),
+      },
+    },
+    {
+      $sort: {
+        priceAfterDiscount: id as 1 | -1,
+      },
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "review",
+        foreignField: "_id",
+        as: "review",
+      },
+    },
+  ]);
+  // console.log(product);
+
+  resp.status(200).json(new ApiResponse("", 200, product));
+});

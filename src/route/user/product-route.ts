@@ -5,6 +5,7 @@ import {
   bestSellingProducts,
   deleteProduct,
   deleteWishListProduct,
+  filterProducts,
   getAllMyProducts,
   getAllProducts,
   getInventoryOfProducts,
@@ -32,6 +33,7 @@ productRouter
 productRouter.route("/inventory").get(sellerAuth, getInventoryOfProducts);
 productRouter.route("/cartandwishlist/count").get(Auth, wishListAndCartCount);
 productRouter.route("/").get(getAllProducts);
+productRouter.route("/filter").post(filterProducts);
 productRouter.route("/bestselling").get(sellerAuth, bestSellingProducts);
 productRouter.route("/graphdataforadmin").get(Auth, graphDataForAdminDashboard);
 productRouter.route("/randomproducts").get(Auth, suggestRandomProducts);
