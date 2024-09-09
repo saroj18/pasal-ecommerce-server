@@ -25,7 +25,7 @@ export const Auth = async (
 
     if (!accessToken) {
       resp.status(401);
-      throw new ApiError("please login first");
+      throw new ApiError("please login first", 401);
     }
     const decodAccessToken = jwt.verify(
       accessToken,
@@ -94,6 +94,8 @@ export const Auth = async (
     } catch (err) {
       return resp.status(400).json({ success: false, error: err.message });
     }
-    return resp.status(400).json({ success: false, error: error.message });
+    return resp
+      .status(error.statusCode)
+      .json({ success: false, error: error.message });
   }
 };

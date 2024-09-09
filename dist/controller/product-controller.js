@@ -106,13 +106,33 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
 }));
 //get all products for all users
 export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const findProducts = yield Product.find().populate([
+    const findProducts = yield Product.aggregate([
         {
-            path: "addedBy",
-            select: "-refreshToken -password",
+            $lookup: {
+                from: "shops",
+                localField: "addedBy",
+                foreignField: "_id",
+                as: "addedBy",
+            },
         },
         {
-            path: "review",
+            $lookup: {
+                from: "reviews",
+                localField: "review",
+                foreignField: "_id",
+                as: "review",
+            },
+        },
+        {
+            $addFields: {
+                addedBy: {
+                    $arrayElemAt: ["$addedBy", 0],
+                },
+                review: { $arrayElemAt: ["$review", 0] },
+                rating: {
+                    $avg: "$starArray",
+                },
+            },
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, findProducts));
@@ -120,7 +140,6 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
 //get single product for customer
 export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    console.log(id);
     const findProduct = yield Product.aggregate([
         {
             $match: {
@@ -203,6 +222,13 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
                     $push: "$review",
                 },
                 priceAfterDiscount: { $first: "$priceAfterDiscount" },
+            },
+        },
+        {
+            $addFields: {
+                rating: {
+                    $avg: "$starArray",
+                },
             },
         },
     ]);
@@ -464,24 +490,27 @@ export const suggestRandomProducts = asyncHandler((req, resp) => __awaiter(void 
 }));
 export const filterProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     let { brand, rating, category, price } = req.body;
-    price = Number(price);
+    price = price && price.split("-");
     rating = rating && rating.split("");
-    console.log(rating);
+    console.log(Number(rating[1]));
+    console.log(Number(rating[0]));
     let id = Number(req.query.id) || 1;
     const product = yield Product.aggregate([
         {
             $addFields: {
-                avgRating: { $avg: "$starArray" },
+                rating: { $ifNull: [{ $avg: "$starArray" }, 0] },
             },
         },
         {
             $match: Object.assign(Object.assign(Object.assign(Object.assign({}, (brand && { brand })), (category && { category })), (rating && {
-                avgRating: {
-                    $gt: Number(rating[0]),
+                rating: {
+                    $gte: Number(rating[0]),
                     $lt: Number(rating[1]),
                 },
             })), (price && {
-                priceAfterDiscount: price == 25000 ? { $gt: price } : { $lt: price },
+                priceAfterDiscount: Number(price) == 25000
+                    ? { $gt: Number(price) }
+                    : { $gt: Number(price[0]), $lt: Number(price[1]) },
             })),
         },
         {
@@ -498,6 +527,5 @@ export const filterProducts = asyncHandler((req, resp) => __awaiter(void 0, void
             },
         },
     ]);
-    // console.log(product);
     resp.status(200).json(new ApiResponse("", 200, product));
 }));

@@ -103,6 +103,16 @@ export const loginUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, v
     resp.cookie("refreshToken", refreshToken, options);
     resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
 }));
+export const userLogOut = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield User.findById(req.user);
+    if (!user) {
+        throw new ApiError("User not found");
+    }
+    resp.cookie("accessToken", "");
+    resp.cookie("refreshToken", "");
+    resp.cookie("shopId", "");
+    resp.status(200).json(new ApiResponse("logout successfully", 200, null));
+}));
 export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const { fullname, email, mobile, dob, gender, state, district, city, tole, ward, nearBy, defaultAddress, location, } = req.body;
@@ -327,4 +337,12 @@ export const unBlockUserByAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
     resp
         .status(200)
         .json(new ApiResponse("user unBlocked successfully", 200, data));
+}));
+export const aboutMe = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.user);
+    const user = yield User.findById(req.user);
+    if (!user) {
+        throw new ApiError("User not found");
+    }
+    resp.status(200).json(new ApiResponse("", 200, user));
 }));

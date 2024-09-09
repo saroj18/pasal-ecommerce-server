@@ -117,6 +117,20 @@ export const loginUser = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
 });
 
+export const userLogOut = asyncHandler(async (req, resp) => {
+  const user = await User.findById(req.user);
+
+  if (!user) {
+    throw new ApiError("User not found");
+  }
+
+  resp.cookie("accessToken", "");
+  resp.cookie("refreshToken", "");
+  resp.cookie("shopId", "");
+
+  resp.status(200).json(new ApiResponse("logout successfully", 200, null));
+});
+
 export const userVerify = asyncHandler(async (req, resp) => {
   const {
     fullname,
@@ -415,4 +429,15 @@ export const unBlockUserByAdmin = asyncHandler(async (req, resp) => {
   resp
     .status(200)
     .json(new ApiResponse("user unBlocked successfully", 200, data));
+});
+
+export const aboutMe = asyncHandler(async (req, resp) => {
+  console.log(req.user);
+  const user = await User.findById(req.user);
+
+  if (!user) {
+    throw new ApiError("User not found");
+  }
+
+  resp.status(200).json(new ApiResponse("", 200, user));
 });
