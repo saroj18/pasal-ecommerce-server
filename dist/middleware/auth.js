@@ -34,6 +34,9 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
         if (findUser.block) {
             throw new ApiError("Your are blocked by Admin");
         }
+        if (findUser.role == "admin") {
+            throw new ApiError("please login from customer side");
+        }
         req.user = findUser._id;
         req.role = "customer";
         next();
