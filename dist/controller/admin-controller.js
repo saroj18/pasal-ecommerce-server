@@ -15,6 +15,7 @@ import { Product } from "../model/product-model.js";
 import { Order } from "../model/order.model.js";
 import { User } from "../model/user.model.js";
 import { DeleveryPerson } from "../model/delevery-person-model.js";
+import { ApiError } from "../utils/ApiError.js";
 // graph data from admin dashboard
 export const graphDataForAdminDashboard = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { time } = req.body;
@@ -293,4 +294,20 @@ export const topListForAdminDashboard = asyncHandler((req, resp) => __awaiter(vo
         topExpensiveProduct,
         demo,
     }));
+}));
+export const adminLogOut = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield User.findById(req.user);
+    if (!user) {
+        throw new ApiError("User not found");
+    }
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        expires: new Date(Date.now()),
+    };
+    resp.clearCookie("accessToken", options);
+    resp.clearCookie("refreshToken", options);
+    resp.status(200).json(new ApiResponse("logout successfully", 200, null));
 }));

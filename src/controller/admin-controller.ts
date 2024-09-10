@@ -6,6 +6,8 @@ import { Product } from "../model/product-model.js";
 import { Order } from "../model/order.model.js";
 import { User } from "../model/user.model.js";
 import { DeleveryPerson } from "../model/delevery-person-model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { CookieOptions } from "express";
 
 // graph data from admin dashboard
 export const graphDataForAdminDashboard = asyncHandler(async (req, resp) => {
@@ -311,4 +313,27 @@ export const topListForAdminDashboard = asyncHandler(async (req, resp) => {
       demo,
     })
   );
+});
+
+
+export const adminLogOut = asyncHandler(async (req, resp) => {
+  const user = await User.findById(req.user);
+
+  if (!user) {
+    throw new ApiError("User not found");
+  }
+
+
+  const options: CookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    expires: new Date(Date.now()),
+  };
+
+  resp.clearCookie("accessToken", options);
+  resp.clearCookie("refreshToken", options);
+
+  resp.status(200).json(new ApiResponse("logout successfully", 200, null));
 });

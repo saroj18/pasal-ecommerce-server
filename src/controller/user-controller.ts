@@ -281,8 +281,13 @@ export const getAddress = asyncHandler(async (req, resp) => {
 });
 
 export const addToCart = asyncHandler(async (req, resp) => {
+  
+  if (req.role == "admin") {
+    throw new ApiError("please login from customer side");
+  }
+
   const { productId, count } = req.body;
-  const { _id } = req.user;
+  const  _id  = req.user;
 
   if (!productId || !_id) {
     throw new ApiError("please provide required info");

@@ -11,7 +11,7 @@ import { User } from "../model/user.model.js";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessTokenAndRefreshToken } from "../controller/user-controller.js";
-export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
+export const adminAuth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { accessToken } = req.cookies;
         const token = req.headers.authorization;
@@ -31,11 +31,12 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
             resp.status(404);
             throw new ApiError("User not found");
         }
-        if (findUser.block) {
-            throw new ApiError("Your are blocked by Admin");
+        if (findUser.role !== "admin") {
+            resp.status(401);
+            throw new ApiError("unauthorized request");
         }
         req.user = findUser._id;
-        req.role = findUser.role;
+        req.role = "admin";
         next();
     }
     catch (error) {
@@ -63,7 +64,7 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
                 resp.cookie("refreshToken", refresh, options);
                 req.cookies.accessToken = accessToken;
                 req.cookies.refreshToken = refresh;
-                yield Auth(req, resp, next);
+                yield adminAuth(req, resp, next);
                 return;
             }
         }
