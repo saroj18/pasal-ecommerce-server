@@ -17,7 +17,7 @@ export const esewaOrderForm = (hash, amount, orderId, deleveryCharge) => __await
         product_service_charge: "0",
         product_delivery_charge: deleveryCharge,
         success_url: process.env.ESEWA_SUCCESS_URL,
-        failure_url: process.env.ESEWA_SUCCESS_URL,
+        failure_url: process.env.ESEWA_FAILER_URL,
         signed_field_names: "total_amount,transaction_uuid,product_code",
         signature: hash,
         secret: "8gBm/:&EnhH.1/q",

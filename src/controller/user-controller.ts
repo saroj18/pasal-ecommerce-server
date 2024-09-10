@@ -124,9 +124,17 @@ export const userLogOut = asyncHandler(async (req, resp) => {
     throw new ApiError("User not found");
   }
 
-  resp.cookie("accessToken", "");
-  resp.cookie("refreshToken", "");
-  resp.cookie("shopId", "");
+  const options: CookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    expires: new Date(Date.now()),
+  };
+
+  resp.clearCookie("accessToken", options);
+  resp.clearCookie("refreshToken", options);
+  resp.clearCookie("shopId", options);
 
   resp.status(200).json(new ApiResponse("logout successfully", 200, null));
 });
