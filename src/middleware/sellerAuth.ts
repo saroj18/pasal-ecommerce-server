@@ -1,10 +1,8 @@
 import { ObjectId, Schema } from "mongoose";
 import { User } from "../model/user.model.js";
-import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 import { CookieOptions, NextFunction, Request, Response } from "express";
-import { Auth } from "./auth.js";
 import { generateAccessTokenAndRefreshToken } from "../controller/user-controller.js";
 
 interface TokenPayload extends JwtPayload {

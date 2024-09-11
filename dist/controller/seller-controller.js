@@ -139,6 +139,7 @@ export const sellerDashboardData = asyncHandler((req, resp) => __awaiter(void 0,
     }));
 }));
 export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const { time } = req.body;
     const { id } = req.query;
     const dateArray = [];
@@ -254,7 +255,7 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
     let dateForVisit = [];
     let dateForReview = [];
     if (time == "24hrs") {
-        dates = orders[0].dates.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
+        dates = (_a = orders[0].dates) === null || _a === void 0 ? void 0 : _a.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
         dateforRevenue = totalRevenue.map((ele) => {
             return {
                 date: dayjs(ele._id).format("YY-MM-DD HH"),

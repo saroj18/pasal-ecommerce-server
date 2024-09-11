@@ -268,7 +268,7 @@ export const sellerDashBoardGraphData = asyncHandler(async (req, resp) => {
   let dateForReview = [];
 
   if (time == "24hrs") {
-    dates = orders[0].dates.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
+    dates = orders[0].dates?.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
     dateforRevenue = totalRevenue.map((ele) => {
       return {
         date: dayjs(ele._id).format("YY-MM-DD HH"),
