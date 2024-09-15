@@ -529,3 +529,16 @@ export const filterProducts = asyncHandler((req, resp) => __awaiter(void 0, void
     ]);
     resp.status(200).json(new ApiResponse("", 200, product));
 }));
+export const searchProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { query } = req.query;
+    console.log(query);
+    const findProduct = yield Product.find({
+        $or: [
+            { name: { $regex: query, $options: "i" } },
+            { category: { $regex: query, $options: "i" } },
+            { brand: { $regex: query, $options: "i" } },
+        ],
+    }).limit(6);
+    console.log(findProduct);
+    resp.status(200).json(new ApiResponse("", 200, findProduct));
+}));

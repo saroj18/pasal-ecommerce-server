@@ -629,3 +629,19 @@ export const filterProducts = asyncHandler(async (req, resp) => {
 
   resp.status(200).json(new ApiResponse("", 200, product));
 });
+
+export const searchProducts = asyncHandler(async (req, resp) => {
+  const { query } = req.query;
+  console.log(query);
+
+  const findProduct = await Product.find({
+    $or: [
+      { name: { $regex: query, $options: "i" } },
+      { category: { $regex: query, $options: "i" } },
+      { brand: { $regex: query, $options: "i" } },
+    ],
+  }).limit(6);
+  console.log(findProduct);
+
+  resp.status(200).json(new ApiResponse("", 200, findProduct));
+});

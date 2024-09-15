@@ -13,7 +13,7 @@ const WishListSchema: Schema<WishListType> = new Schema({
   },
   addedBy: {
     type: Schema.Types.ObjectId,
-    ref: "user",    
+    ref: "user",
     required: true,
   },
 });

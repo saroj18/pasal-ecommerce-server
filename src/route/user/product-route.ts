@@ -11,6 +11,7 @@ import {
   getInventoryOfProducts,
   getSingleProduct,
   getWishListProduct,
+  searchProducts,
   suggestRandomProducts,
   updateProduct,
   wishListAndCartCount,
@@ -38,6 +39,7 @@ productRouter.route("/bestselling").get(sellerAuth, bestSellingProducts);
 productRouter.route("/graphdataforadmin").get(Auth, graphDataForAdminDashboard);
 productRouter.route("/randomproducts").get(Auth, suggestRandomProducts);
 productRouter.route("/myproduct").get(sellerAuth, getAllMyProducts);
+productRouter.route("/search").get(sellerAuth, searchProducts);
 productRouter
   .route("/cart")
   .post(Auth, addToCart)
