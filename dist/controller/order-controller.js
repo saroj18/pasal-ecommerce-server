@@ -15,6 +15,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { createOrderHash } from "../utils/esewaOrderHash.js";
 import { ObjectId } from "mongodb";
+import { User } from "../model/user.model.js";
+import { khaltiOrderHandler } from "../utils/khaltiOrderHandler.js";
 export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderDetails } = req.body;
     const { product, billingAddress, deleveryAddress, payMethod, totalPrice, deleveryCharge, cartInfo, } = orderDetails;
@@ -37,10 +39,20 @@ export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
         status: "pending",
         cartInfo,
     });
-    console.log("info", cartInfo);
-    const esewaHash = createOrderHash(order.totalPrice, order._id, deleveryCharge);
-    const orderData = yield esewaOrderForm(esewaHash, order.totalPrice, order._id, order.deleveryCharge);
-    resp.status(200).json(new ApiResponse("", 200, orderData));
+    if (payMethod === "esewa") {
+        const esewaHash = createOrderHash(order.totalPrice, order._id, deleveryCharge);
+        const orderData = yield esewaOrderForm(esewaHash, order.totalPrice, order._id, order.deleveryCharge);
+        resp.status(200).json(new ApiResponse("", 200, orderData));
+    }
+    if (payMethod === "khalti") {
+        const user = yield User.findById(_id);
+        if (!user) {
+            throw new ApiError("User not found");
+        }
+        const khaltiResponse = yield khaltiOrderHandler(totalPrice, user, order);
+        console.log(khaltiResponse);
+        resp.status(200).json(new ApiResponse("", 200, khaltiResponse));
+    }
 }));
 export const getMyOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { _id } = req.user;
@@ -196,6 +208,7 @@ export const orderCancledBySeller = asyncHandler((req, resp) => __awaiter(void 0
         },
         new: true,
     });
+    yield Product.updateMany({ _id: { $in: cancleOrder.product } }, { $inc: { totalSale: -1 } });
     resp
         .status(200)
         .json(new ApiResponse("order cancled successfully", 200, cancleOrder));

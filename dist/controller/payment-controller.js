@@ -16,6 +16,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ObjectId } from "mongodb";
 import { Cart } from "../model/cart-model.js";
 import { Product } from "../model/product-model.js";
+import { khaltiPaymentVerify } from "../utils/khaltiPaymentVerify.js";
 export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.body;
     const { _id } = req.user;
@@ -42,6 +43,7 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
         order: productOrder._id,
         status: "COMPLETE",
         ref_id: getStatusInfo.ref_id,
+        payMethod: "esewa",
     });
     yield Cart.deleteMany({ addedBy: _id });
     productOrder.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
@@ -153,4 +155,39 @@ export const paymentHistoryOfVendor = asyncHandler((req, resp) => __awaiter(void
         },
     ]);
     resp.status(200).json(new ApiResponse("", 200, findPayment));
+}));
+export const khaltiCallback = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = req.query;
+    const { _id } = req.user;
+    console.log(data);
+    const verify = yield khaltiPaymentVerify(data.pidx);
+    if (verify.status != "Completed") {
+        throw new ApiError("failed to verify your payment");
+    }
+    const productOrder = yield Order.findByIdAndUpdate(data.purchase_order_id, {
+        $set: {
+            paymentStatus: "complete",
+            orderComplete: true,
+        },
+    }, {
+        new: true,
+    });
+    if (!productOrder) {
+        throw new ApiError("there is no any orders");
+    }
+    yield Payment.create({
+        order: productOrder._id,
+        status: "COMPLETE",
+        ref_id: verify.pidx,
+        payMethod: "khalti",
+    });
+    yield Cart.deleteMany({ addedBy: _id });
+    productOrder.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
+        yield Product.findByIdAndUpdate(ele.product._id, {
+            $inc: {
+                totalSale: ele.productCount,
+            },
+        });
+    }));
+    resp.status(200).json(new ApiResponse("", 200, null));
 }));

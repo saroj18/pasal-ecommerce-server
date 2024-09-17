@@ -15,6 +15,11 @@ const PaymentSchema = new Schema({
         type: String,
         required: true,
     },
+    payMethod: {
+        type: String,
+        required: true,
+        default: 'cash'
+    },
 }, {
     timestamps: true,
 });

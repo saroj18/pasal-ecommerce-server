@@ -17,6 +17,7 @@ import { sellerAuth } from "../../middleware/sellerAuth.js";
 export const orderRoute = Router();
 
 orderRoute.route("/esewa").post(Auth, productOrder);
+orderRoute.route("/khalti").post(Auth, productOrder);
 orderRoute.route("/").get(Auth, getMyOrder);
 orderRoute.route("/myorder").get(Auth, pendingOrder);
 orderRoute.route("/sellerorder").get(sellerAuth, getMyOrderForSeller);

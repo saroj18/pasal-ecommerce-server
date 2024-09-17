@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import { esewaOrderForm } from "../helper/esewaOrderForm.js";
 import { Order } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
@@ -6,6 +7,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { createOrderHash } from "../utils/esewaOrderHash.js";
 import { ObjectId } from "mongodb";
+import { User } from "../model/user.model.js";
+import { khaltiOrderHandler } from "../utils/khaltiOrderHandler.js";
 
 export const productOrder = asyncHandler(async (req, resp) => {
   const { orderDetails } = req.body;
@@ -41,22 +44,34 @@ export const productOrder = asyncHandler(async (req, resp) => {
     status: "pending",
     cartInfo,
   });
-  console.log("info", cartInfo);
 
-  const esewaHash = createOrderHash(
-    order.totalPrice,
-    order._id as string,
-    deleveryCharge
-  );
+  if (payMethod === "esewa") {
+    const esewaHash = createOrderHash(
+      order.totalPrice,
+      order._id as string,
+      deleveryCharge
+    );
 
-  const orderData = await esewaOrderForm(
-    esewaHash,
-    order.totalPrice,
-    order._id as string,
-    order.deleveryCharge
-  );
+    const orderData = await esewaOrderForm(
+      esewaHash,
+      order.totalPrice,
+      order._id as string,
+      order.deleveryCharge
+    );
 
-  resp.status(200).json(new ApiResponse("", 200, orderData));
+    resp.status(200).json(new ApiResponse("", 200, orderData));
+  }
+
+  if (payMethod === "khalti") {
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new ApiError("User not found");
+    }
+    const khaltiResponse = await khaltiOrderHandler(totalPrice, user, order);
+    console.log(khaltiResponse);
+
+    resp.status(200).json(new ApiResponse("", 200, khaltiResponse));
+  }
 });
 
 export const getMyOrder = asyncHandler(async (req, resp) => {
@@ -231,6 +246,11 @@ export const orderCancledBySeller = asyncHandler(async (req, resp) => {
     },
     new: true,
   });
+
+  await Product.updateMany(
+    { _id: { $in: cancleOrder.product } },
+    { $inc: { totalSale: -1 } }
+  );
 
   resp
     .status(200)

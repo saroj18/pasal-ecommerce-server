@@ -4,6 +4,7 @@ interface PaymentType extends Document {
   order: Schema.Types.ObjectId;
   status: string;
   ref_id: string;
+  payMethod: string;
 }
 
 const PaymentSchema: Schema<PaymentType> = new Schema(
@@ -22,6 +23,11 @@ const PaymentSchema: Schema<PaymentType> = new Schema(
     ref_id: {
       type: String,
       required: true,
+    },
+    payMethod: {
+      type: String,
+      required: true,
+      default:'cash'
     },
   },
   {

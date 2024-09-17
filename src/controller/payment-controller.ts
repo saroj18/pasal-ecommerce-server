@@ -1,4 +1,3 @@
-import fetch from "node-fetch";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { esewaStatusInfo } from "../helper/esewaStatusInfo.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -8,6 +7,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ObjectId } from "mongodb";
 import { Cart } from "../model/cart-model.js";
 import { Product } from "../model/product-model.js";
+import { khaltiPaymentVerify } from "../utils/khaltiPaymentVerify.js";
 
 export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   const { token } = req.body;
@@ -46,6 +46,7 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
     order: productOrder._id,
     status: "COMPLETE",
     ref_id: getStatusInfo.ref_id,
+    payMethod: "esewa",
   });
 
   await Cart.deleteMany({ addedBy: _id });
@@ -167,4 +168,50 @@ export const paymentHistoryOfVendor = asyncHandler(async (req, resp) => {
   ]);
 
   resp.status(200).json(new ApiResponse("", 200, findPayment));
+});
+
+export const khaltiCallback = asyncHandler(async (req, resp) => {
+  const data = req.query;
+  const { _id } = req.user;
+  console.log(data);
+
+  const verify = await khaltiPaymentVerify(data.pidx as string);
+
+  if (verify.status != "Completed") {
+    throw new ApiError("failed to verify your payment");
+  }
+
+  const productOrder = await Order.findByIdAndUpdate(
+    data.purchase_order_id,
+    {
+      $set: {
+        paymentStatus: "complete",
+        orderComplete: true,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  if (!productOrder) {
+    throw new ApiError("there is no any orders");
+  }
+  await Payment.create({
+    order: productOrder._id,
+    status: "COMPLETE",
+    ref_id: verify.pidx,
+    payMethod: "khalti",
+  });
+
+  await Cart.deleteMany({ addedBy: _id });
+
+  productOrder.cartInfo.forEach(async (ele) => {
+    await Product.findByIdAndUpdate(ele.product._id, {
+      $inc: {
+        totalSale: ele.productCount,
+      },
+    });
+  });
+
+  resp.status(200).json(new ApiResponse("", 200, null));
 });
