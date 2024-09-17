@@ -22,7 +22,7 @@ orderRoute.route("/myorder").get(Auth, pendingOrder);
 orderRoute.route("/sellerorder").get(sellerAuth, getMyOrderForSeller);
 orderRoute.route("/placed").post(sellerAuth, orderPlacedBySeller);
 // .get(Auth, placedOrder);
-orderRoute.route("/cancled").post(sellerAuth, orderCancledBySeller);
+orderRoute.route("/cancled").post(Auth, orderCancledBySeller);
 // .get(Auth, cancledOrder);
 orderRoute.route("/history").get(Auth, orderHistoryOfVendor);
 orderRoute.route("/:id").get(Auth, getMyOrderForAdmin);

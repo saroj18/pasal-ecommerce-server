@@ -29,13 +29,16 @@ export const sellerAuth = (req, resp, next) => __awaiter(void 0, void 0, void 0,
             resp.status(404);
             throw new ApiError("User not found");
         }
+        if (!findUser.verify) {
+            throw new ApiError("Please verify yourself first!!");
+        }
         if (findUser.role !== "seller") {
             resp.status(401);
             throw new ApiError("unauthorized request");
         }
         req.user = findUser._id;
         req.shopId = shopId;
-        req.role = 'seller';
+        req.role = "seller";
         next();
     }
     catch (error) {

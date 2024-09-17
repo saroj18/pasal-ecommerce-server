@@ -13,9 +13,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { generateAccessTokenAndRefreshToken } from "../controller/user-controller.js";
 export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { accessToken } = req.cookies;
-        const token = req.headers.authorization;
-        console.log(token);
+        const { accessToken, shopId } = req.cookies;
         // console.log(accessToken);
         if (!accessToken) {
             resp.status(401);
@@ -31,8 +29,14 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
             resp.status(404);
             throw new ApiError("User not found");
         }
+        // if (!findUser.verify) {
+        //   throw new ApiError("Please verify yourself first!!");
+        // }
         if (findUser.block) {
             throw new ApiError("Your are blocked by Admin");
+        }
+        if (findUser.role == "seller") {
+            req.shopId = shopId;
         }
         req.user = findUser._id;
         req.role = findUser.role;

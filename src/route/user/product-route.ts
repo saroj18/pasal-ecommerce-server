@@ -35,11 +35,11 @@ productRouter.route("/inventory").get(sellerAuth, getInventoryOfProducts);
 productRouter.route("/cartandwishlist/count").get(Auth, wishListAndCartCount);
 productRouter.route("/").get(getAllProducts);
 productRouter.route("/filter").post(filterProducts);
-productRouter.route("/bestselling").get(sellerAuth, bestSellingProducts);
+productRouter.route("/bestselling").get(Auth, bestSellingProducts);
 productRouter.route("/graphdataforadmin").get(Auth, graphDataForAdminDashboard);
 productRouter.route("/randomproducts").get(Auth, suggestRandomProducts);
 productRouter.route("/myproduct").get(sellerAuth, getAllMyProducts);
-productRouter.route("/search").get(sellerAuth, searchProducts);
+productRouter.route("/search").get(searchProducts);
 productRouter
   .route("/cart")
   .post(Auth, addToCart)

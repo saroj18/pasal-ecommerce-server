@@ -18,9 +18,7 @@ export const Auth = async (
   next: NextFunction
 ) => {
   try {
-    const { accessToken } = req.cookies;
-    const token = req.headers.authorization;
-    console.log(token);
+    const { accessToken, shopId } = req.cookies;
     // console.log(accessToken);
 
     if (!accessToken) {
@@ -43,10 +41,15 @@ export const Auth = async (
       resp.status(404);
       throw new ApiError("User not found");
     }
+    // if (!findUser.verify) {
+    //   throw new ApiError("Please verify yourself first!!");
+    // }
     if (findUser.block) {
       throw new ApiError("Your are blocked by Admin");
     }
-
+    if (findUser.role == "seller") {
+      req.shopId = shopId;
+    }
     req.user = findUser._id;
     req.role = findUser.role;
     next();

@@ -102,6 +102,9 @@ export const getMyOrderForAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
             },
         },
         {
+            $unwind: "$product",
+        },
+        {
             $unwind: "$deleveryAddress",
         },
         {
@@ -115,9 +118,9 @@ export const getMyOrderForAdmin = asyncHandler((req, resp) => __awaiter(void 0, 
                 },
             },
         },
-        {
-            $unwind: "$info",
-        },
+        // {
+        //   $unwind: "$info",
+        // },
     ]);
     resp.status(200).json(new ApiResponse("", 200, myOrder));
 }));
