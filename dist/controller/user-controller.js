@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { errorFormatter } from "../utils/errorFormater.js";
-import { UserAddressZodSchema, UserLoginZodSchema, UserSignUpZodSchema, userVerifyZodSchema, } from "../zodschema/user/user-signup.js";
+import { UserAddressZodSchema, UserLoginZodSchema, UserProfileEditZodSchema, UserSignUpZodSchema, userVerifyZodSchema, } from "../zodschema/user/user-signup.js";
 import { User } from "../model/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -206,6 +206,46 @@ export const userVerify = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     findUser.verify = true;
     yield findUser.save();
     resp.status(200).json(new ApiResponse("successfully verify", 200, null));
+}));
+export const editProfile = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { currentPassword, confirmPassword, newPassword } = req.body;
+    const validateInfo = UserProfileEditZodSchema.safeParse(req.body);
+    if (validateInfo.error) {
+        const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
+        resp.status(400).json({ success: false, error });
+        return;
+    }
+    if (confirmPassword !== newPassword) {
+        throw new ApiError("password not match");
+    }
+    const findUser = yield User.findOne({ email: validateInfo.data.email });
+    if (!findUser) {
+        throw new ApiError("user not found");
+    }
+    if (!findUser.oAuthLogin) {
+        const checkPassword = findUser.comparePassword(currentPassword);
+        if (!checkPassword) {
+            throw new ApiError("your old password is incorrect");
+        }
+    }
+    const user = yield User.findOneAndUpdate({ email: validateInfo.data.email }, {
+        $set: {
+            fullname: validateInfo.data.fullname,
+            gender: validateInfo.data.gender,
+            dob: validateInfo.data.dob,
+            mobile: validateInfo.data.mobile,
+            password: confirmPassword,
+        },
+    }, {
+        new: true,
+    });
+    if (!user) {
+        throw new ApiError("user not found");
+    }
+    resp
+        .status(200)
+        .json(new ApiResponse("profile edit successfully", 200, user));
 }));
 export const userInfo = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { _id } = req.user;

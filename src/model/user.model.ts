@@ -24,6 +24,7 @@ export interface Customer extends Document {
   block: boolean;
   socketInfo: WebSocket;
   online: boolean;
+  oAuthLogin: boolean;
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -98,6 +99,10 @@ const UserSchema: Schema<Customer> = new Schema(
       default: null,
     },
     online: {
+      type: Boolean,
+      default: false,
+    },
+    oAuthLogin: {
       type: Boolean,
       default: false,
     },

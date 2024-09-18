@@ -20,6 +20,7 @@ export const loginWithGoogle = asyncHandler(async (req, resp) => {
       fullname,
       signUpAs: "customer",
       password: "login_from_google",
+      oAuthLogin: true,
     });
 
     if (!saveOnDb) {
@@ -60,7 +61,10 @@ export const loginWithGoogle = asyncHandler(async (req, resp) => {
       findUser._id as Schema.Types.ObjectId
     );
 
-  const user = await User.findByIdAndUpdate(findUser._id, { refreshToken });
+  const user = await User.findByIdAndUpdate(findUser._id, {
+    refreshToken,
+    oAuthLogin: true,
+  });
 
   const options: CookieOptions = {
     httpOnly: true,

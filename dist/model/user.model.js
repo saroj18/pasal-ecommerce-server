@@ -84,6 +84,10 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    oAuthLogin: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true,
     validateBeforeSave: true,

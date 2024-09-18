@@ -62,7 +62,40 @@ export const UserLoginZodSchema = z.object({
   role: roleZodeSchema,
 });
 
-// fullname,email,mobile,dob,gender,state,district,city,tole,ward,nearBy,defaultAddress,location
+export const UserProfileEditZodSchema = z.object({
+  email: emailZodeSchema,
+  mobile: z
+    .string({
+      required_error: "mobile must be required",
+      invalid_type_error: "mobile must be string",
+    })
+    .trim()
+    .min(1, { message: "mobile must be 10 character" })
+    .max(10, { message: "mobile must be 10 character" }),
+  dob: z
+    .string({
+      required_error: "dob must be required",
+      invalid_type_error: "dob must be string",
+    })
+    .trim()
+    .min(1, { message: "dob must be 1 character" }),
+  gender: z
+    .string({
+      required_error: "gender must be required",
+      invalid_type_error: "invalid gender",
+    })
+    .trim()
+    .min(1, { message: "gender must be 1 character" }),
+  fullname: z
+    .string({
+      required_error: "name must be required",
+      invalid_type_error: "name must be string",
+    })
+    .trim()
+    .min(4, { message: "name must be 4 character" })
+    .max(25, { message: "name must be less than 25 character" }),
+});
+
 
 export const userVerifyZodSchema = z.object({
   fullname: z
@@ -193,26 +226,20 @@ export const ShopVerifyZodSchema = z.object({
     })
     .trim()
     .min(1, { message: "citiNumber must be 1 letter" }),
-  shopImage: z
-    .any()
-    .refine((val: any) => val != null, {
-      message: "1 images must be required",
-    }),
-  documentImage: z
-    .any()
-    .refine((val: any) => val != null, {
-      message: "1 images must be required",
-    }),
+  shopImage: z.any().refine((val: any) => val != null, {
+    message: "1 images must be required",
+  }),
+  documentImage: z.any().refine((val: any) => val != null, {
+    message: "1 images must be required",
+  }),
   shopLocation: z
     .any()
     .refine((val: { [key: string]: number }) => val?.lat && val?.lng, {
       message: "location must be required",
     }),
-  yourImage: z
-    .any()
-    .refine((val: any) => val != null, {
-      message: "1 images must be required",
-    }),
+  yourImage: z.any().refine((val: any) => val != null, {
+    message: "1 images must be required",
+  }),
 });
 
 export const UserAddressZodSchema = z.object({

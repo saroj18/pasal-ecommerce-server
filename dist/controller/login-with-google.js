@@ -25,6 +25,7 @@ export const loginWithGoogle = asyncHandler((req, resp) => __awaiter(void 0, voi
             fullname,
             signUpAs: "customer",
             password: "login_from_google",
+            oAuthLogin: true,
         });
         if (!saveOnDb) {
             throw new ApiError("Failed to save on db");
@@ -50,7 +51,10 @@ export const loginWithGoogle = asyncHandler((req, resp) => __awaiter(void 0, voi
     findUser.role = "customer";
     yield findUser.save();
     const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser._id);
-    const user = yield User.findByIdAndUpdate(findUser._id, { refreshToken });
+    const user = yield User.findByIdAndUpdate(findUser._id, {
+        refreshToken,
+        oAuthLogin: true,
+    });
     const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

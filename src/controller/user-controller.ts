@@ -3,6 +3,7 @@ import { errorFormatter } from "../utils/errorFormater.js";
 import {
   UserAddressZodSchema,
   UserLoginZodSchema,
+  UserProfileEditZodSchema,
   UserSignUpZodSchema,
   userVerifyZodSchema,
 } from "../zodschema/user/user-signup.js";
@@ -254,6 +255,59 @@ export const userVerify = asyncHandler(async (req, resp) => {
   resp.status(200).json(new ApiResponse("successfully verify", 200, null));
 });
 
+export const editProfile = asyncHandler(async (req, resp) => {
+  const { currentPassword, confirmPassword, newPassword } = req.body;
+  const validateInfo = UserProfileEditZodSchema.safeParse(req.body);
+
+  if (validateInfo.error) {
+    const error = errorFormatter(validateInfo.error?.format());
+    resp.status(400).json({ success: false, error });
+    return;
+  }
+
+  if (confirmPassword !== newPassword) {
+    throw new ApiError("password not match");
+  }
+
+  const findUser = await User.findOne({ email: validateInfo.data.email });
+
+  if (!findUser) {
+    throw new ApiError("user not found");
+  }
+
+  if (!findUser.oAuthLogin) {
+    const checkPassword = findUser.comparePassword(currentPassword);
+
+    if (!checkPassword) {
+      throw new ApiError("your old password is incorrect");
+    }
+  }
+
+  const user = await User.findOneAndUpdate(
+    { email: validateInfo.data.email },
+    {
+      $set: {
+        fullname: validateInfo.data.fullname,
+        gender: validateInfo.data.gender,
+        dob: validateInfo.data.dob,
+        mobile: validateInfo.data.mobile,
+        password: confirmPassword,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!user) {
+    throw new ApiError("user not found");
+  }
+
+  resp
+    .status(200)
+    .json(new ApiResponse("profile edit successfully", 200, user));
+});
+
 export const userInfo = asyncHandler(async (req, resp) => {
   const { _id } = req.user;
 
@@ -281,13 +335,12 @@ export const getAddress = asyncHandler(async (req, resp) => {
 });
 
 export const addToCart = asyncHandler(async (req, resp) => {
-  
   if (req.role == "admin") {
     throw new ApiError("please login from customer side");
   }
 
   const { productId, count } = req.body;
-  const  _id  = req.user;
+  const _id = req.user;
 
   if (!productId || !_id) {
     throw new ApiError("please provide required info");
