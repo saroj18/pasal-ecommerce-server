@@ -15,6 +15,9 @@ import http from "http";
 import { chatRoute } from "./route/user/chat.route.js";
 import dotenv from "dotenv";
 import { adminRoute } from "./route/user/admin-route.js";
+import { oauthRoute } from "./route/user/oauth-route.js";
+import GoogleStrategy from "passport-google-oauth20";
+import passport from "passport";
 dotenv.config();
 export const app = express();
 export const server = http.createServer(app);
@@ -22,6 +25,14 @@ app.use(express.json());
 app.use(cors({
     origin: process.env.ORIGIN,
     credentials: true,
+}));
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    passReqToCallback: true,
+}, function (request, accessToken, refreshToken, profile, done) {
+    return done(null, profile);
 }));
 app.use(cookieParser());
 app.use("/api/v1/user", userRouter);
@@ -35,6 +46,7 @@ app.use("/api/v1/review", reviewRoute);
 app.use("/api/v1/offers", offerRoute);
 app.use("/api/v1/chats", chatRoute);
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/oauth", oauthRoute);
 app.use((err, req, resp, next) => {
     globalErrorHandler(err, resp);
 });

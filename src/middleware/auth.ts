@@ -19,17 +19,15 @@ export const Auth = async (
 ) => {
   try {
     const { accessToken, shopId } = req.cookies;
-    // console.log(accessToken);
 
     if (!accessToken) {
       resp.status(401);
-      throw new ApiError("please login first", 401);
+      throw new ApiError("please login first>>>>>>", 401);
     }
     const decodAccessToken = jwt.verify(
       accessToken,
       process.env.ACCESS_TOKEN_SECRETE as string
     ) as TokenPayload;
-
     if (!decodAccessToken) {
       resp.status(401);
       throw new Error("Invalid token");
