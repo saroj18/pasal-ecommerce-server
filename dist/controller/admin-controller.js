@@ -150,7 +150,7 @@ export const graphDataForAdminDashboard = asyncHandler((req, resp) => __awaiter(
     const userData = [];
     const visitorData = [];
     dateArray.forEach((ele) => {
-        const findDate = dates.filter((date) => date == ele);
+        const findDate = dates === null || dates === void 0 ? void 0 : dates.filter((date) => date == ele);
         vendorData.push({
             date: ele,
             value: findDate.length,

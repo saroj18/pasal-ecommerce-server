@@ -268,7 +268,7 @@ export const sellerDashBoardGraphData = asyncHandler(async (req, resp) => {
   let dateForReview = [];
 
   if (time == "24hrs") {
-    dates = orders[0].dates?.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
+    dates = orders[0]?.dates?.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
     dateforRevenue = totalRevenue.map((ele) => {
       return {
         date: dayjs(ele._id).format("YY-MM-DD HH"),
@@ -284,7 +284,7 @@ export const sellerDashBoardGraphData = asyncHandler(async (req, resp) => {
       dateForReview.push(dayjs(ele._id).format("YY-MM-DD HH"));
     });
   } else {
-    dates = orders[0].dates.map((ele) => dayjs(ele).format("YY-MM-DD"));
+    dates = orders[0]?.dates?.map((ele) => dayjs(ele).format("YY-MM-DD"));
     dateforRevenue = totalRevenue.map((ele) => {
       return {
         date: dayjs(ele._id).format("YY-MM-DD"),
@@ -292,7 +292,7 @@ export const sellerDashBoardGraphData = asyncHandler(async (req, resp) => {
       };
     });
     visitors.forEach((ele) => {
-      ele.visitDate.forEach((element) => {
+      ele?.visitDate?.forEach((element) => {
         dateForVisit.push(dayjs(element).format("YY-MM-DD"));
       });
     });
@@ -304,10 +304,10 @@ export const sellerDashBoardGraphData = asyncHandler(async (req, resp) => {
   const graphData = [];
 
   dateArray.forEach((ele) => {
-    const findDate = dates.filter((date) => date == ele);
+    const findDate = dates?.filter((date) => date == ele);
     graphData.push({
       date: ele,
-      value: findDate.length,
+      value: findDate?.length,
     });
   });
 

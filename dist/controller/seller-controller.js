@@ -139,7 +139,7 @@ export const sellerDashboardData = asyncHandler((req, resp) => __awaiter(void 0,
     }));
 }));
 export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b, _c, _d;
     const { time } = req.body;
     const { id } = req.query;
     const dateArray = [];
@@ -255,7 +255,7 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
     let dateForVisit = [];
     let dateForReview = [];
     if (time == "24hrs") {
-        dates = (_a = orders[0].dates) === null || _a === void 0 ? void 0 : _a.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
+        dates = (_b = (_a = orders[0]) === null || _a === void 0 ? void 0 : _a.dates) === null || _b === void 0 ? void 0 : _b.map((ele) => dayjs(ele).format("YY-MM-DD HH"));
         dateforRevenue = totalRevenue.map((ele) => {
             return {
                 date: dayjs(ele._id).format("YY-MM-DD HH"),
@@ -272,7 +272,7 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
         });
     }
     else {
-        dates = orders[0].dates.map((ele) => dayjs(ele).format("YY-MM-DD"));
+        dates = (_d = (_c = orders[0]) === null || _c === void 0 ? void 0 : _c.dates) === null || _d === void 0 ? void 0 : _d.map((ele) => dayjs(ele).format("YY-MM-DD"));
         dateforRevenue = totalRevenue.map((ele) => {
             return {
                 date: dayjs(ele._id).format("YY-MM-DD"),
@@ -280,7 +280,8 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
             };
         });
         visitors.forEach((ele) => {
-            ele.visitDate.forEach((element) => {
+            var _a;
+            (_a = ele === null || ele === void 0 ? void 0 : ele.visitDate) === null || _a === void 0 ? void 0 : _a.forEach((element) => {
                 dateForVisit.push(dayjs(element).format("YY-MM-DD"));
             });
         });
@@ -290,10 +291,10 @@ export const sellerDashBoardGraphData = asyncHandler((req, resp) => __awaiter(vo
     }
     const graphData = [];
     dateArray.forEach((ele) => {
-        const findDate = dates.filter((date) => date == ele);
+        const findDate = dates === null || dates === void 0 ? void 0 : dates.filter((date) => date == ele);
         graphData.push({
             date: ele,
-            value: findDate.length,
+            value: findDate === null || findDate === void 0 ? void 0 : findDate.length,
         });
     });
     const revenueData = [];

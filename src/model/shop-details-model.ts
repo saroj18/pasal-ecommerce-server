@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { Customer } from "./user.model.js";
 
 type LocationType = {
   lat: number;
@@ -7,7 +8,7 @@ type LocationType = {
 
 interface ShopType extends Document {
   shopName: string;
-  owner: Schema.Types.ObjectId;
+  owner: Schema.Types.ObjectId | Customer;
   location: LocationType;
   category: string;
   image: string;
@@ -18,6 +19,7 @@ interface ShopType extends Document {
   shopAddress: string;
   verified: boolean;
   citiNumber: string;
+  createdAt?: string;
 }
 
 const ShopSchema: Schema<ShopType> = new Schema(

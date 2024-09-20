@@ -11,6 +11,9 @@ import { Shop } from "../model/shop-details-model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
+import { sendEmail } from "../utils/nodemailer-config.js";
+import { shopVerifyApproveEmailContent } from "../mail-message/shop-verified.js";
+import { shopVerifyRejectEmailContent } from "../mail-message/shop-reject.js";
 export const getAllaVerifiedVendor = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const vendor = yield Shop.find({ verified: true }).populate({
         path: "owner",
@@ -30,16 +33,34 @@ export const getUnverifiedVendor = asyncHandler((req, resp) => __awaiter(void 0,
     resp.status(200).json(new ApiResponse("", 200, findVendor));
 }));
 export const vendorVefify = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const { flag, shopId } = req.body;
+    const { flag, shopId, report } = req.body;
     if (!flag) {
         throw new ApiError("please provide flag first");
     }
     if (flag === "approve") {
-        yield Shop.findByIdAndUpdate(shopId, {
+        const shopUser = yield Shop.findByIdAndUpdate(shopId, {
             $set: {
                 verified: true,
             },
-        });
+        }).populate("owner");
+        const emailSend = yield sendEmail(shopUser.owner.email, "Shop Verified", shopVerifyApproveEmailContent(shopUser.owner.fullname, shopUser.shopName, shopUser.createdAt, report));
+        if (!emailSend) {
+            throw new ApiError("failed to send email");
+        }
+        resp
+            .status(200)
+            .json(new ApiResponse("vendor verify successfully", 200, null));
+    }
+    if (flag === "reject") {
+        const shopUser = yield Shop.findByIdAndUpdate(shopId, {
+            $set: {
+                verified: false,
+            },
+        }).populate("owner");
+        const emailSend = yield sendEmail(shopUser.owner.email, "Shop Verified", shopVerifyRejectEmailContent(shopUser.owner.fullname, shopUser.shopName, report));
+        if (!emailSend) {
+            throw new ApiError("failed to send email");
+        }
         resp
             .status(200)
             .json(new ApiResponse("vendor verify successfully", 200, null));
