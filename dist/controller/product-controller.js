@@ -443,7 +443,6 @@ export const bestSellingProducts = asyncHandler((req, resp) => __awaiter(void 0,
             $limit: 5,
         },
     ]);
-    console.log("sa", topCategory);
     resp.status(200).json(new ApiResponse("", 200, { product, topCategory }));
 }));
 //get product for our popular product field on home page

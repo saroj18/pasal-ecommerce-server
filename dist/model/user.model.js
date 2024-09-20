@@ -88,6 +88,14 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    verifyToken: {
+        type: String,
+        default: null,
+    },
+    verifyTokenExpiry: {
+        type: Number,
+        default: null,
+    },
 }, {
     timestamps: true,
     validateBeforeSave: true,

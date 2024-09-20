@@ -18,6 +18,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { Order } from "../model/order.model.js";
 import { Shop } from "../model/shop-details-model.js";
 import { ObjectId } from "mongodb";
+import bcrypt from "bcrypt";
 
 export const generateAccessTokenAndRefreshToken = async (
   id: Schema.Types.ObjectId
@@ -506,4 +507,65 @@ export const aboutMe = asyncHandler(async (req, resp) => {
   }
 
   resp.status(200).json(new ApiResponse("", 200, user));
+});
+
+export const verifyToken = asyncHandler(async (req, resp) => {
+  const { token } = req.query;
+
+  if (!token) {
+    throw new ApiError("please provide token");
+  }
+
+  const findUser = await User.findOne({ verifyToken: token });
+  console.log("user>>", findUser);
+
+  if (!findUser) {
+    throw new ApiError("invalid token");
+  }
+  const compareToken = await bcrypt.compare(findUser.email, token as string);
+
+  if (!compareToken) {
+    throw new ApiError("failed to match token");
+  }
+
+  if (Date.now() > findUser.verifyTokenExpiry) {
+    throw new ApiError("token is expired");
+  }
+
+  // findUser.verifyToken = null;
+  // findUser.verifyTokenExpiry = null;
+  // await findUser.save();
+
+  resp
+    .status(200)
+    .json(new ApiResponse("token verify successfull", 200, findUser));
+});
+
+export const resetPassword = asyncHandler(async (req, resp) => {
+  const { newPassword, confirmPassword, email } = req.body;
+
+  if (!email) {
+    throw new ApiError("Please provide email first");
+  }
+
+  if (!newPassword || !confirmPassword) {
+    throw new ApiError("please enter a password");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new ApiError("password not match");
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError("user not found");
+  }
+
+  user.password = confirmPassword;
+  await user.save();
+
+  resp
+    .status(200)
+    .json(new ApiResponse("password reset successfully", 200, user));
 });

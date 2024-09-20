@@ -19,6 +19,7 @@ import jwt from "jsonwebtoken";
 import { Order } from "../model/order.model.js";
 import { Shop } from "../model/shop-details-model.js";
 import { ObjectId } from "mongodb";
+import bcrypt from "bcrypt";
 export const generateAccessTokenAndRefreshToken = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield User.findById(id);
     if (!userInfo) {
@@ -395,4 +396,49 @@ export const aboutMe = asyncHandler((req, resp) => __awaiter(void 0, void 0, voi
         throw new ApiError("User not found");
     }
     resp.status(200).json(new ApiResponse("", 200, user));
+}));
+export const verifyToken = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { token } = req.query;
+    if (!token) {
+        throw new ApiError("please provide token");
+    }
+    const findUser = yield User.findOne({ verifyToken: token });
+    console.log("user>>", findUser);
+    if (!findUser) {
+        throw new ApiError("invalid token");
+    }
+    const compareToken = yield bcrypt.compare(findUser.email, token);
+    if (!compareToken) {
+        throw new ApiError("failed to match token");
+    }
+    if (Date.now() > findUser.verifyTokenExpiry) {
+        throw new ApiError("token is expired");
+    }
+    // findUser.verifyToken = null;
+    // findUser.verifyTokenExpiry = null;
+    // await findUser.save();
+    resp
+        .status(200)
+        .json(new ApiResponse("token verify successfull", 200, findUser));
+}));
+export const resetPassword = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { newPassword, confirmPassword, email } = req.body;
+    if (!email) {
+        throw new ApiError("Please provide email first");
+    }
+    if (!newPassword || !confirmPassword) {
+        throw new ApiError("please enter a password");
+    }
+    if (newPassword !== confirmPassword) {
+        throw new ApiError("password not match");
+    }
+    const user = yield User.findOne({ email });
+    if (!user) {
+        throw new ApiError("user not found");
+    }
+    user.password = confirmPassword;
+    yield user.save();
+    resp
+        .status(200)
+        .json(new ApiResponse("password reset successfully", 200, user));
 }));

@@ -528,7 +528,6 @@ export const bestSellingProducts = asyncHandler(async (req, resp) => {
     },
   ]);
 
-  console.log("sa", topCategory);
 
   resp.status(200).json(new ApiResponse("", 200, { product, topCategory }));
 });

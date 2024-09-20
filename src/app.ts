@@ -19,6 +19,7 @@ import { adminRoute } from "./route/user/admin-route.js";
 import { oauthRoute } from "./route/user/oauth-route.js";
 import GoogleStrategy from "passport-google-oauth20";
 import passport from "passport";
+import { mailRoute } from "./route/user/mail-route.js";
 dotenv.config();
 
 export const app = express();
@@ -60,6 +61,7 @@ app.use("/api/v1/offers", offerRoute);
 app.use("/api/v1/chats", chatRoute);
 app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/oauth", oauthRoute);
+app.use("/api/v1/mail", mailRoute);
 app.use((err: ApiError, req: Request, resp: Response, next: NextFunction) => {
   globalErrorHandler(err, resp);
 });

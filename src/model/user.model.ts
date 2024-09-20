@@ -25,6 +25,8 @@ export interface Customer extends Document {
   socketInfo: WebSocket;
   online: boolean;
   oAuthLogin: boolean;
+  verifyToken: null | string;
+  verifyTokenExpiry: number | null;
 }
 
 const UserSchema: Schema<Customer> = new Schema(
@@ -105,6 +107,14 @@ const UserSchema: Schema<Customer> = new Schema(
     oAuthLogin: {
       type: Boolean,
       default: false,
+    },
+    verifyToken: {
+      type: String,
+      default: null,
+    },
+    verifyTokenExpiry: {
+      type: Number,
+      default: null,
     },
   },
   {
