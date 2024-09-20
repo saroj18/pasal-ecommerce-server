@@ -1,14 +1,16 @@
 import fetch from "node-fetch";
 import { esewaOrderForm } from "../helper/esewaOrderForm.js";
-import { Order } from "../model/order.model.js";
+import { Order, OrderType } from "../model/order.model.js";
 import { Product } from "../model/product-model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { createOrderHash } from "../utils/esewaOrderHash.js";
 import { ObjectId } from "mongodb";
-import { User } from "../model/user.model.js";
+import { Customer, User } from "../model/user.model.js";
 import { khaltiOrderHandler } from "../utils/khaltiOrderHandler.js";
+import { sendEmail } from "../utils/nodemailer-config.js";
+import { orderPlacedEmailContent } from "../mail-message/order-placed.js";
 
 export const productOrder = asyncHandler(async (req, resp) => {
   const { orderDetails } = req.body;
@@ -214,7 +216,8 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
       status: "complete",
     },
     new: true,
-  });
+  }).populate([{ path: "purchaseBy" }, { path: "product" }]);
+
 
   orderPlaced.cartInfo.forEach(async (ele) => {
     await Product.updateOne(
@@ -226,6 +229,21 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
       }
     );
   });
+
+  const mailSend = await sendEmail(
+    (orderPlaced.purchaseBy as Customer).email,
+    "Order Placed",
+    orderPlacedEmailContent(
+      (orderPlaced.purchaseBy as Customer).fullname,
+      orderPlaced._id as string,
+      orderPlaced.product as Product[],
+      orderPlaced.totalPrice
+    )
+  );
+
+  if (!mailSend) {
+    throw new ApiError("failed to send order mail");
+  }
 
   resp
     .status(200)

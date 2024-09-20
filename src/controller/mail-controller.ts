@@ -3,8 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import bcrypt from "bcrypt";
 import { sendEmail } from "../utils/nodemailer-config.js";
-import { resetPasswordEmailContent } from "../utils/reset-password-email-content.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { resetPasswordEmailContent } from "../mail-message/reset-password.js";
 
 export const sendMailForResetPassword = asyncHandler(async (req, resp) => {
   const { email } = req.body;

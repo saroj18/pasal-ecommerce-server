@@ -1,8 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { Customer } from "./user.model.js";
+import { Product } from "./product-model.js";
 
 export interface OrderType extends Document {
-  product: Schema.Types.ObjectId[];
-  purchaseBy: Schema.Types.ObjectId;
+  product: Schema.Types.ObjectId[] | Product[];
+  purchaseBy: Schema.Types.ObjectId | Customer;
   deleveryAddress: Schema.Types.ObjectId;
   paymentStatus: string;
   payMethod: string;

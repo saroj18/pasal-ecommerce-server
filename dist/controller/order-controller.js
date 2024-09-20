@@ -17,6 +17,8 @@ import { createOrderHash } from "../utils/esewaOrderHash.js";
 import { ObjectId } from "mongodb";
 import { User } from "../model/user.model.js";
 import { khaltiOrderHandler } from "../utils/khaltiOrderHandler.js";
+import { sendEmail } from "../utils/nodemailer-config.js";
+import { orderPlacedEmailContent } from "../mail-message/order-placed.js";
 export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderDetails } = req.body;
     const { product, billingAddress, deleveryAddress, payMethod, totalPrice, deleveryCharge, cartInfo, } = orderDetails;
@@ -184,7 +186,7 @@ export const orderPlacedBySeller = asyncHandler((req, resp) => __awaiter(void 0,
             status: "complete",
         },
         new: true,
-    });
+    }).populate([{ path: "purchaseBy" }, { path: "product" }]);
     orderPlaced.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
         yield Product.updateOne({ _id: ele.product._id }, {
             $inc: {
@@ -192,6 +194,10 @@ export const orderPlacedBySeller = asyncHandler((req, resp) => __awaiter(void 0,
             },
         });
     }));
+    const mailSend = yield sendEmail(orderPlaced.purchaseBy.email, "Order Placed", orderPlacedEmailContent(orderPlaced.purchaseBy.fullname, orderPlaced._id, orderPlaced.product, orderPlaced.totalPrice));
+    if (!mailSend) {
+        throw new ApiError("failed to send order mail");
+    }
     resp
         .status(200)
         .json(new ApiResponse("order placed successfully", 200, null));
