@@ -52,7 +52,7 @@ export const esewaStatusCheck = asyncHandler(async (req, resp) => {
   await Cart.deleteMany({ addedBy: _id });
 
   productOrder.cartInfo.forEach(async (ele) => {
-    await Product.findByIdAndUpdate(ele.product._id, {
+    await Product.findByIdAndUpdate(ele.product, {
       $inc: {
         totalSale: ele.productCount,
       },
@@ -206,7 +206,7 @@ export const khaltiCallback = asyncHandler(async (req, resp) => {
   await Cart.deleteMany({ addedBy: _id });
 
   productOrder.cartInfo.forEach(async (ele) => {
-    await Product.findByIdAndUpdate(ele.product._id, {
+    await Product.findByIdAndUpdate(ele.product, {
       $inc: {
         totalSale: ele.productCount,
       },

@@ -47,7 +47,7 @@ export const esewaStatusCheck = asyncHandler((req, resp) => __awaiter(void 0, vo
     });
     yield Cart.deleteMany({ addedBy: _id });
     productOrder.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
-        yield Product.findByIdAndUpdate(ele.product._id, {
+        yield Product.findByIdAndUpdate(ele.product, {
             $inc: {
                 totalSale: ele.productCount,
             },
@@ -183,7 +183,7 @@ export const khaltiCallback = asyncHandler((req, resp) => __awaiter(void 0, void
     });
     yield Cart.deleteMany({ addedBy: _id });
     productOrder.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
-        yield Product.findByIdAndUpdate(ele.product._id, {
+        yield Product.findByIdAndUpdate(ele.product, {
             $inc: {
                 totalSale: ele.productCount,
             },
