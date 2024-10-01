@@ -16,7 +16,7 @@ export const Auth = (req, resp, next) => __awaiter(void 0, void 0, void 0, funct
         const { accessToken, shopId } = req.cookies;
         if (!accessToken) {
             resp.status(401);
-            throw new ApiError("please login first>>>>>>", 401);
+            throw new ApiError("please login first", 401);
         }
         const decodAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRETE);
         if (!decodAccessToken) {

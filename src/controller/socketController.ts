@@ -13,16 +13,34 @@ type SocketMessageType = {
   product: string;
 };
 
+type webRtcMessageType = Pick<
+  SocketMessageType,
+  "sender" | "receiver" | "type"
+> & {
+  sdp: RTCSessionDescription;
+  candidate?: RTCIceCandidate;
+};
+
 export const socketController = (
   socket: WebSocket,
-  data: SocketMessageType
+  data: SocketMessageType | webRtcMessageType
 ) => {
+  console.log("eventName", data.type);
   switch (data.type) {
     case "typing":
-      startTyping(socket, data);
+      startTyping(socket, data as SocketMessageType);
       break;
     case "customer_and_vendor_chat":
-      chatWithVendorAndCustomer(socket, data);
+      chatWithVendorAndCustomer(socket, data as SocketMessageType);
+      break;
+    case "rtcOffer":
+      rtcOfferHandler(socket, data as webRtcMessageType);
+      break;
+    case "rtcAnswer":
+      rtcAnswerHandler(socket, data as webRtcMessageType);
+      break;
+    case "ice-candidate":
+      iceCandidateHandler(socket, data as webRtcMessageType);
       break;
   }
 };
@@ -86,4 +104,69 @@ const chatWithVendorAndCustomer = async (
   } catch (error) {
     console.log(error.message);
   }
+};
+
+const rtcOfferHandler = async (
+  socket: WebSocket,
+  { receiver, sender, sdp, type }: webRtcMessageType
+) => {
+  const findUser = await User.findById(receiver);
+
+  if (!findUser) {
+    throw new ApiError("user not found");
+  }
+
+  socket.send(
+    JSON.stringify({
+      sender,
+      sdp,
+      type,
+      receiver,
+    })
+  );
+  console.log("RTC Offer sent successfully");
+};
+
+const rtcAnswerHandler = async (
+  socket: WebSocket,
+  { receiver, sender, sdp, type }: webRtcMessageType
+) => {
+  const findUser = await User.findById(receiver);
+
+  if (!findUser) {
+    throw new ApiError("user not found");
+  }
+
+  socket.send(
+    JSON.stringify({
+      sender,
+      sdp,
+      type,
+      receiver,
+    })
+  );
+  // console.log("RTC Answer sent successfully");
+};
+
+const iceCandidateHandler = async (
+  socket: WebSocket,
+  { receiver, sender, candidate, type }: webRtcMessageType
+) => {
+  console.log("candidate", candidate);
+  console.log("type", type);
+  const findUser = await User.findById(receiver);
+
+  if (!findUser) {
+    throw new ApiError("user not found");
+  }
+
+  socket?.send(
+    JSON.stringify({
+      sender,
+      candidate,
+      type,
+      receiver,
+    })
+  );
+  console.log("ICE candidate sent successfully");
 };

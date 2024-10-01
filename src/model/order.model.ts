@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { Customer } from "./user.model.js";
 import { Product } from "./product-model.js";
+import { CartType } from "./cart-model.js";
 
 export interface OrderType extends Document {
   product: Schema.Types.ObjectId[] | Product[];
@@ -15,7 +16,7 @@ export interface OrderType extends Document {
   deleveryCharge: number;
   reviewed: boolean;
   productQty: number;
-  cartInfo: any[];
+  cartInfo: CartType[];
 }
 
 const OrderSchema: Schema<OrderType> = new Schema(

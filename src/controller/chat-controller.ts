@@ -7,8 +7,6 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 export const getAllChatForCustomerAndVendor = asyncHandler(
   async (req, resp) => {
     const { id } = req.query;
-    console.log(">>", id);
-    console.log(">>tttt", req.user);
 
     const chats = await Chat.find({
       type: "customer_and_vendor_chat",
@@ -16,7 +14,10 @@ export const getAllChatForCustomerAndVendor = asyncHandler(
         { $and: [{ sender: req.user }, { receiver: id }] },
         { $and: [{ sender: id }, { receiver: req.user }] },
       ],
-    });
+    }).populate([
+      {path:'sender'},
+      {path:'receiver'}
+    ]);
 
     if (!chats) {
       throw new ApiError("chats not found");

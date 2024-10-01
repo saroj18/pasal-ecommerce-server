@@ -13,15 +13,16 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 export const getAllChatForCustomerAndVendor = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.query;
-    console.log(">>", id);
-    console.log(">>tttt", req.user);
     const chats = yield Chat.find({
         type: "customer_and_vendor_chat",
         $or: [
             { $and: [{ sender: req.user }, { receiver: id }] },
             { $and: [{ sender: id }, { receiver: req.user }] },
         ],
-    });
+    }).populate([
+        { path: 'sender' },
+        { path: 'receiver' }
+    ]);
     if (!chats) {
         throw new ApiError("chats not found");
     }

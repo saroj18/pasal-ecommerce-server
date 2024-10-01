@@ -40,6 +40,7 @@ export const socketConnection = (server) => {
             socket.on("message", (data) => {
                 let socketData = data.toString();
                 socketData = JSON.parse(socketData);
+                // console.log(socketData);
                 socketData.sender = user._id;
                 socketController(socketInfo.get(socketData.receiver), socketData);
             });

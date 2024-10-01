@@ -123,6 +123,7 @@ export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
 
 //get all products for all users
 export const getAllProducts = asyncHandler(async (req, resp) => {
+  const { skip, limit } = req.query;
   const findProducts = await Product.aggregate([
     {
       $lookup: {
@@ -151,6 +152,12 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
         },
       },
     },
+    {
+      $limit: Number(limit),
+    },
+    {
+      $skip: Number(skip),
+    },
   ]);
 
   resp.status(200).json(new ApiResponse("", 200, findProducts));
@@ -173,6 +180,19 @@ export const getSingleProduct = asyncHandler(async (req, resp) => {
         localField: "addedBy",
         foreignField: "_id",
         as: "addedBy",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+            },
+          },
+          {
+            $unwind: "$owner",
+          },
+        ],
       },
     },
     {
@@ -527,7 +547,6 @@ export const bestSellingProducts = asyncHandler(async (req, resp) => {
       $limit: 5,
     },
   ]);
-
 
   resp.status(200).json(new ApiResponse("", 200, { product, topCategory }));
 });

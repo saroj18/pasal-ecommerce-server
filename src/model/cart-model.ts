@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface CartType extends Document{
+export interface CartType extends Document{
     product:Schema.Types.ObjectId,
     addedBy:Schema.Types.ObjectId
     productCount:Number

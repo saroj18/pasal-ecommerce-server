@@ -19,6 +19,8 @@ import { User } from "../model/user.model.js";
 import { khaltiOrderHandler } from "../utils/khaltiOrderHandler.js";
 import { sendEmail } from "../utils/nodemailer-config.js";
 import { orderPlacedEmailContent } from "../mail-message/order-placed.js";
+import { Payment } from "../model/payment-model.js";
+import { Cart } from "../model/cart-model.js";
 export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderDetails } = req.body;
     const { product, billingAddress, deleveryAddress, payMethod, totalPrice, deleveryCharge, cartInfo, } = orderDetails;
@@ -29,6 +31,44 @@ export const productOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
         !totalPrice ||
         product.length < 1) {
         throw new ApiError("please provide all details");
+    }
+    if (payMethod == "cash") {
+        const user = yield User.findById(_id);
+        if (!user) {
+            throw new ApiError("User not found");
+        }
+        const order = yield Order.create({
+            product,
+            payMethod,
+            totalPrice,
+            billingAddress,
+            deleveryAddress,
+            purchaseBy: _id,
+            deleveryCharge,
+            status: "pending",
+            cartInfo,
+            paymentStatus: "complete",
+            orderComplete: true,
+        });
+        if (!order) {
+            throw new ApiError("failed to save on db");
+        }
+        yield Payment.create({
+            order: order._id,
+            status: "COMPLETE",
+            ref_id: Math.random() * 1000,
+            payMethod: "cash",
+        });
+        yield Promise.all(order.cartInfo.map((cart) => __awaiter(void 0, void 0, void 0, function* () {
+            yield Product.findByIdAndUpdate(cart.product, {
+                $inc: {
+                    totalSale: cart.productCount
+                }
+            });
+        })));
+        yield Cart.deleteMany({ addedBy: order.purchaseBy });
+        resp.status(200).json(new ApiResponse("", 200, order));
+        return;
     }
     const order = yield Order.create({
         product,
@@ -188,7 +228,7 @@ export const orderPlacedBySeller = asyncHandler((req, resp) => __awaiter(void 0,
         new: true,
     }).populate([{ path: "purchaseBy" }, { path: "product" }]);
     orderPlaced.cartInfo.forEach((ele) => __awaiter(void 0, void 0, void 0, function* () {
-        yield Product.updateOne({ _id: ele.product._id }, {
+        yield Product.updateOne({ _id: ele.product }, {
             $inc: {
                 stock: -ele.productCount,
             },
@@ -214,7 +254,9 @@ export const orderCancledBySeller = asyncHandler((req, resp) => __awaiter(void 0
         },
         new: true,
     });
-    yield Product.updateMany({ _id: { $in: cancleOrder.product } }, { $inc: { totalSale: -1 } });
+    yield Promise.all(cancleOrder.cartInfo.map((prod) => __awaiter(void 0, void 0, void 0, function* () {
+        yield Product.updateMany({ _id: prod.product }, { $inc: { totalSale: -Number(prod.productCount) } });
+    })));
     resp
         .status(200)
         .json(new ApiResponse("order cancled successfully", 200, cancleOrder));

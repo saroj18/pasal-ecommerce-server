@@ -22,7 +22,7 @@ export const Auth = async (
 
     if (!accessToken) {
       resp.status(401);
-      throw new ApiError("please login first>>>>>>", 401);
+      throw new ApiError("please login first", 401);
     }
     const decodAccessToken = jwt.verify(
       accessToken,

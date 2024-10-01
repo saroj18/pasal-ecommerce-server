@@ -12,15 +12,15 @@ const ChatSchema: Schema<ChatType> = new Schema(
   {
     sender: {
       type: Schema.Types.ObjectId,
-      ref: "users",
+      ref: "user",
     },
     receiver: {
       type: Schema.Types.ObjectId,
-      ref: "users",
+      ref: "user",
     },
     product: {
       type: Schema.Types.ObjectId,
-      ref: "products",
+      ref: "product",
     },
     message: {
       type: String,

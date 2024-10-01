@@ -106,6 +106,7 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
 }));
 //get all products for all users
 export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    const { skip, limit } = req.query;
     const findProducts = yield Product.aggregate([
         {
             $lookup: {
@@ -134,6 +135,12 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
                 },
             },
         },
+        {
+            $limit: Number(limit),
+        },
+        {
+            $skip: Number(skip),
+        },
     ]);
     resp.status(200).json(new ApiResponse("", 200, findProducts));
 }));
@@ -152,6 +159,19 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
                 localField: "addedBy",
                 foreignField: "_id",
                 as: "addedBy",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                        },
+                    },
+                    {
+                        $unwind: "$owner",
+                    },
+                ],
             },
         },
         {

@@ -1,6 +1,5 @@
 import { Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
-import { MulterError } from "multer";
 
 export const globalErrorHandler = (err: ApiError, resp: Response) => {
   console.log("error>>>", err);

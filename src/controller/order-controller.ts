@@ -11,6 +11,8 @@ import { Customer, User } from "../model/user.model.js";
 import { khaltiOrderHandler } from "../utils/khaltiOrderHandler.js";
 import { sendEmail } from "../utils/nodemailer-config.js";
 import { orderPlacedEmailContent } from "../mail-message/order-placed.js";
+import { Payment } from "../model/payment-model.js";
+import { Cart } from "../model/cart-model.js";
 
 export const productOrder = asyncHandler(async (req, resp) => {
   const { orderDetails } = req.body;
@@ -33,6 +35,53 @@ export const productOrder = asyncHandler(async (req, resp) => {
     product.length < 1
   ) {
     throw new ApiError("please provide all details");
+  }
+
+  if (payMethod == "cash") {
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new ApiError("User not found");
+    }
+
+    const order = await Order.create({
+      product,
+      payMethod,
+      totalPrice,
+      billingAddress,
+      deleveryAddress,
+      purchaseBy: _id,
+      deleveryCharge,
+      status: "pending",
+      cartInfo,
+      paymentStatus: "complete",
+      orderComplete: true,
+    });
+
+    if (!order) {
+      throw new ApiError("failed to save on db");
+    }
+
+    await Payment.create({
+      order: order._id,
+      status: "COMPLETE",
+      ref_id: Math.random() * 1000,
+      payMethod: "cash",
+    });
+
+    
+    await Promise.all(
+      order.cartInfo.map(async(cart) => {
+        await Product.findByIdAndUpdate(cart.product, {
+          $inc: {
+            totalSale:cart.productCount
+          }
+        })
+      })
+    )
+
+    await Cart.deleteMany({ addedBy: order.purchaseBy });
+    resp.status(200).json(new ApiResponse("", 200, order));
+return
   }
 
   const order = await Order.create({
@@ -218,10 +267,9 @@ export const orderPlacedBySeller = asyncHandler(async (req, resp) => {
     new: true,
   }).populate([{ path: "purchaseBy" }, { path: "product" }]);
 
-
   orderPlaced.cartInfo.forEach(async (ele) => {
     await Product.updateOne(
-      { _id: ele.product._id },
+      { _id: ele.product },
       {
         $inc: {
           stock: -ele.productCount,
@@ -265,10 +313,13 @@ export const orderCancledBySeller = asyncHandler(async (req, resp) => {
     new: true,
   });
 
-  await Product.updateMany(
-    { _id: { $in: cancleOrder.product } },
-    { $inc: { totalSale: -1 } }
+
+  await Promise.all(cancleOrder.cartInfo.map(async(prod) => {
+    await Product.updateMany(
+    { _id: prod.product },
+    { $inc: { totalSale: -Number(prod.productCount) } }
   );
+  }))
 
   resp
     .status(200)

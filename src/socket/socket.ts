@@ -31,7 +31,7 @@ export const socketConnection = (server: Server) => {
           throw new Error("user not found");
         });
       }
-      socketInfo.set(user._id.toString(), socket);
+      socketInfo.set(user._id.toString(), socket)
       user.online = true;
       await user.save();
 
@@ -42,6 +42,7 @@ export const socketConnection = (server: Server) => {
       socket.on("message", (data) => {
         let socketData: any = data.toString();
         socketData = JSON.parse(socketData);
+        // console.log(socketData);
         socketData.sender = user._id;
         socketController(socketInfo.get(socketData.receiver), socketData);
       });

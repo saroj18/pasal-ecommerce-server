@@ -12,12 +12,22 @@ import { ApiError } from "../utils/ApiError.js";
 import { Chat } from "../model/chat-model.js";
 import { Product } from "../model/product-model.js";
 export const socketController = (socket, data) => {
+    console.log("eventName", data.type);
     switch (data.type) {
         case "typing":
             startTyping(socket, data);
             break;
         case "customer_and_vendor_chat":
             chatWithVendorAndCustomer(socket, data);
+            break;
+        case "rtcOffer":
+            rtcOfferHandler(socket, data);
+            break;
+        case "rtcAnswer":
+            rtcAnswerHandler(socket, data);
+            break;
+        case "ice-candidate":
+            iceCandidateHandler(socket, data);
             break;
     }
 };
@@ -65,4 +75,45 @@ const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1,
     catch (error) {
         console.log(error.message);
     }
+});
+const rtcOfferHandler = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { receiver, sender, sdp, type }) {
+    const findUser = yield User.findById(receiver);
+    if (!findUser) {
+        throw new ApiError("user not found");
+    }
+    socket.send(JSON.stringify({
+        sender,
+        sdp,
+        type,
+        receiver,
+    }));
+    console.log("RTC Offer sent successfully");
+});
+const rtcAnswerHandler = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { receiver, sender, sdp, type }) {
+    const findUser = yield User.findById(receiver);
+    if (!findUser) {
+        throw new ApiError("user not found");
+    }
+    socket.send(JSON.stringify({
+        sender,
+        sdp,
+        type,
+        receiver,
+    }));
+    // console.log("RTC Answer sent successfully");
+});
+const iceCandidateHandler = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { receiver, sender, candidate, type }) {
+    console.log("candidate", candidate);
+    console.log("type", type);
+    const findUser = yield User.findById(receiver);
+    if (!findUser) {
+        throw new ApiError("user not found");
+    }
+    socket === null || socket === void 0 ? void 0 : socket.send(JSON.stringify({
+        sender,
+        candidate,
+        type,
+        receiver,
+    }));
+    console.log("ICE candidate sent successfully");
 });
