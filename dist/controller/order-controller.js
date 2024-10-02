@@ -321,6 +321,11 @@ export const pendingOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
                 },
             },
         },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
     ]);
     resp.status(200).json(new ApiResponse("", 200, findOrder));
 }));
@@ -333,7 +338,7 @@ export const placedOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0,
             path: "product",
             populate: { path: "addedBy" },
         },
-    ]);
+    ]).sort({ createdAt: 1 });
     resp.status(200).json(new ApiResponse("", 200, order));
 }));
 export const cancledOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
@@ -344,7 +349,7 @@ export const cancledOrder = asyncHandler((req, resp) => __awaiter(void 0, void 0
         {
             path: "product",
         },
-    ]);
+    ]).sort({ createdAt: 1 });
     resp.status(200).json(new ApiResponse("", 200, order));
 }));
 // order history of vendor

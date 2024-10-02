@@ -387,6 +387,12 @@ export const pendingOrder = asyncHandler(async (req, resp) => {
         },
       },
     },
+    {
+      $sort: {
+        createdAt:-1
+      }
+    }
+    
   ]);
 
   resp.status(200).json(new ApiResponse("", 200, findOrder));
@@ -401,7 +407,7 @@ export const placedOrder = asyncHandler(async (req, resp) => {
       path: "product",
       populate: { path: "addedBy" },
     },
-  ]);
+  ]).sort({createdAt:1});
 
   resp.status(200).json(new ApiResponse("", 200, order));
 });
@@ -414,7 +420,7 @@ export const cancledOrder = asyncHandler(async (req, resp) => {
     {
       path: "product",
     },
-  ]);
+  ]).sort({createdAt:1});
 
   resp.status(200).json(new ApiResponse("", 200, order));
 });

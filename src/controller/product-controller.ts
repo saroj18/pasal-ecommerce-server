@@ -124,6 +124,43 @@ export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
 //get all products for all users
 export const getAllProducts = asyncHandler(async (req, resp) => {
   const { skip, limit } = req.query;
+  console.log('skip',skip)
+  if (!skip&&!limit||skip=='0'&&limit=='0') {
+    const findProducts = await Product.aggregate([
+    {
+      $lookup: {
+        from: "shops",
+        localField: "addedBy",
+        foreignField: "_id",
+        as: "addedBy",
+      },
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "review",
+        foreignField: "_id",
+        as: "review",
+      },
+    },
+    {
+      $addFields: {
+        addedBy: {
+          $arrayElemAt: ["$addedBy", 0],
+        },
+        review: { $arrayElemAt: ["$review", 0] },
+        rating: {
+          $avg: "$starArray",
+        },
+      },
+    },
+  ]);
+  console.log(findProducts)
+
+    resp.status(200).json(new ApiResponse("", 200, findProducts));
+    return
+  }
+
   const findProducts = await Product.aggregate([
     {
       $lookup: {
@@ -153,12 +190,13 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
       },
     },
     {
-      $limit: Number(limit),
-    },
-    {
       $skip: Number(skip),
     },
+    {
+      $limit: Number(limit),
+    },
   ]);
+  console.log(findProducts)
 
   resp.status(200).json(new ApiResponse("", 200, findProducts));
 });
@@ -554,11 +592,11 @@ export const bestSellingProducts = asyncHandler(async (req, resp) => {
 //get product for our popular product field on home page
 export const suggestRandomProducts = asyncHandler(async (req, resp) => {
   const product = await Order.aggregate([
-    {
-      $match: {
-        purchaseBy: req.user,
-      },
-    },
+    // {
+    //   $match: {
+    //     purchaseBy: req.user,
+    //   },
+    // },
     {
       $lookup: {
         from: "products",

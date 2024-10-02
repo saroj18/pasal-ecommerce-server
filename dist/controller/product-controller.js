@@ -107,6 +107,41 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
 //get all products for all users
 export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { skip, limit } = req.query;
+    console.log('skip', skip);
+    if (!skip && !limit || skip == '0' && limit == '0') {
+        const findProducts = yield Product.aggregate([
+            {
+                $lookup: {
+                    from: "shops",
+                    localField: "addedBy",
+                    foreignField: "_id",
+                    as: "addedBy",
+                },
+            },
+            {
+                $lookup: {
+                    from: "reviews",
+                    localField: "review",
+                    foreignField: "_id",
+                    as: "review",
+                },
+            },
+            {
+                $addFields: {
+                    addedBy: {
+                        $arrayElemAt: ["$addedBy", 0],
+                    },
+                    review: { $arrayElemAt: ["$review", 0] },
+                    rating: {
+                        $avg: "$starArray",
+                    },
+                },
+            },
+        ]);
+        console.log(findProducts);
+        resp.status(200).json(new ApiResponse("", 200, findProducts));
+        return;
+    }
     const findProducts = yield Product.aggregate([
         {
             $lookup: {
@@ -136,12 +171,13 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
             },
         },
         {
-            $limit: Number(limit),
-        },
-        {
             $skip: Number(skip),
         },
+        {
+            $limit: Number(limit),
+        },
     ]);
+    console.log(findProducts);
     resp.status(200).json(new ApiResponse("", 200, findProducts));
 }));
 //get single product for customer
@@ -468,11 +504,11 @@ export const bestSellingProducts = asyncHandler((req, resp) => __awaiter(void 0,
 //get product for our popular product field on home page
 export const suggestRandomProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const product = yield Order.aggregate([
-        {
-            $match: {
-                purchaseBy: req.user,
-            },
-        },
+        // {
+        //   $match: {
+        //     purchaseBy: req.user,
+        //   },
+        // },
         {
             $lookup: {
                 from: "products",
