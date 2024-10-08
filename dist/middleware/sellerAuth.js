@@ -11,6 +11,7 @@ import { User } from "../model/user.model.js";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessTokenAndRefreshToken } from "../controller/user-controller.js";
+import { Shop } from "../model/shop-details-model.js";
 export const sellerAuth = (req, resp, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { accessToken, shopId } = req.cookies;
@@ -31,6 +32,13 @@ export const sellerAuth = (req, resp, next) => __awaiter(void 0, void 0, void 0,
         }
         if (!findUser.verify) {
             throw new ApiError("Please verify yourself first!!");
+        }
+        const shop = yield Shop.findOne({ owner: findUser._id });
+        if (!shop) {
+            throw new ApiError("shop not found");
+        }
+        if (!shop.verified) {
+            throw new ApiError("Your account is not approve by admin!!");
         }
         if (findUser.role !== "seller") {
             resp.status(401);

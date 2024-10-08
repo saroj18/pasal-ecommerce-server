@@ -6,7 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { sendEmail } from "../utils/nodemailer-config.js";
 import { shopVerifyApproveEmailContent } from "../mail-message/shop-verified.js";
 import { shopVerifyRejectEmailContent } from "../mail-message/shop-reject.js";
-import { Customer } from "../model/user.model.js";
+import { Customer, User } from "../model/user.model.js";
 
 export const getAllaVerifiedVendor = asyncHandler(async (req, resp) => {
   const vendor = await Shop.find({ verified: true }).populate({
@@ -74,6 +74,12 @@ export const vendorVefify = asyncHandler(async (req, resp) => {
       },
     }).populate("owner");
 
+    await User.findByIdAndUpdate(shopUser.owner, {
+      $set: {
+        shopVerify:false
+      }
+    })
+
     const emailSend = await sendEmail(
       (shopUser.owner as Customer).email,
       "Shop Verified",
@@ -90,6 +96,6 @@ export const vendorVefify = asyncHandler(async (req, resp) => {
 
     resp
       .status(200)
-      .json(new ApiResponse("vendor verify successfully", 200, null));
+      .json(new ApiResponse("send mail successfully", 200, null));
   }
 });

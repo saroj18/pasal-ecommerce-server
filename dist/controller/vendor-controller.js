@@ -14,6 +14,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { sendEmail } from "../utils/nodemailer-config.js";
 import { shopVerifyApproveEmailContent } from "../mail-message/shop-verified.js";
 import { shopVerifyRejectEmailContent } from "../mail-message/shop-reject.js";
+import { User } from "../model/user.model.js";
 export const getAllaVerifiedVendor = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const vendor = yield Shop.find({ verified: true }).populate({
         path: "owner",
@@ -57,12 +58,17 @@ export const vendorVefify = asyncHandler((req, resp) => __awaiter(void 0, void 0
                 verified: false,
             },
         }).populate("owner");
+        yield User.findByIdAndUpdate(shopUser.owner, {
+            $set: {
+                shopVerify: false
+            }
+        });
         const emailSend = yield sendEmail(shopUser.owner.email, "Shop Verified", shopVerifyRejectEmailContent(shopUser.owner.fullname, shopUser.shopName, report));
         if (!emailSend) {
             throw new ApiError("failed to send email");
         }
         resp
             .status(200)
-            .json(new ApiResponse("vendor verify successfully", 200, null));
+            .json(new ApiResponse("send mail successfully", 200, null));
     }
 }));

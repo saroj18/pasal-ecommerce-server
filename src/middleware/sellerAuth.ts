@@ -4,6 +4,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 import { CookieOptions, NextFunction, Request, Response } from "express";
 import { generateAccessTokenAndRefreshToken } from "../controller/user-controller.js";
+import { Shop } from "../model/shop-details-model.js";
 
 interface TokenPayload extends JwtPayload {
   _id: Schema.Types.ObjectId;
@@ -43,6 +44,16 @@ export const sellerAuth = async (
     }
     if (!findUser.verify) {
       throw new ApiError("Please verify yourself first!!");
+    }
+
+    const shop = await Shop.findOne({ owner: findUser._id })
+    
+    if (!shop) {
+      throw new ApiError("shop not found")
+    }
+
+    if (!shop.verified) {
+      throw new ApiError("Your account is not approve by admin!!");
     }
 
     if (findUser.role !== "seller") {
