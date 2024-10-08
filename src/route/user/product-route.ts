@@ -25,6 +25,7 @@ import {
 } from "../../controller/user-controller.js";
 import { Auth } from "../../middleware/auth.js";
 import { graphDataForAdminDashboard } from "../../controller/admin-controller.js";
+import { publicAuth } from "../../middleware/publicAuth.js";
 
 export const productRouter = Router();
 
@@ -38,7 +39,7 @@ productRouter.route("/filter").post(filterProducts);
 productRouter.route("/bestselling").get(Auth, bestSellingProducts);
 productRouter.route("/graphdataforadmin").get(Auth, graphDataForAdminDashboard);
 productRouter.route("/randomproducts").get(suggestRandomProducts);
-productRouter.route("/myproduct").get(sellerAuth, getAllMyProducts);
+productRouter.route("/myproduct").get(publicAuth, getAllMyProducts);
 productRouter.route("/search").get(searchProducts);
 productRouter
   .route("/cart")

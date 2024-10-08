@@ -48,7 +48,6 @@ export const signUpUser = asyncHandler((req, resp) => __awaiter(void 0, void 0, 
     if (findUser) {
         throw new ApiError("email already register");
     }
-    console.log(findUser);
     const saveOnDb = yield User.create({
         username,
         password,
@@ -441,4 +440,39 @@ export const resetPassword = asyncHandler((req, resp) => __awaiter(void 0, void 
     resp
         .status(200)
         .json(new ApiResponse("password reset successfully", 200, user));
+}));
+export const adminLogin = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { email, password, role } = req.body;
+    const validateInfo = UserLoginZodSchema.safeParse({ email, password, role });
+    if (validateInfo.error) {
+        const error = errorFormatter((_a = validateInfo.error) === null || _a === void 0 ? void 0 : _a.format());
+        resp.status(400).json({ success: false, error });
+        return;
+    }
+    const findUser = yield User.findOne({ email });
+    if (!findUser) {
+        throw new ApiError("Admin not found");
+    }
+    const checkPassword = yield findUser.comparePassword(password);
+    if (!checkPassword) {
+        throw new ApiError("incorrect password");
+    }
+    if (findUser.signUpAs != 'admin') {
+        throw new ApiError("you are not admin!");
+    }
+    findUser.role = role;
+    yield findUser.save();
+    const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser._id);
+    const user = yield User.findByIdAndUpdate(findUser._id, { refreshToken });
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    };
+    resp.cookie("accessToken", accessToken, options);
+    resp.cookie("refreshToken", refreshToken, options);
+    resp.status(200).json(new ApiResponse("Login successfully", 200, findUser));
 }));
