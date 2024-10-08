@@ -224,22 +224,24 @@ export const editProfile = asyncHandler((req, resp) => __awaiter(void 0, void 0,
         throw new ApiError("user not found");
     }
     if (!findUser.oAuthLogin) {
-        const checkPassword = findUser.comparePassword(currentPassword);
+        const checkPassword = yield findUser.comparePassword(currentPassword);
+        const checkPrevPassword = yield findUser.comparePassword(newPassword);
+        console.log(checkPassword);
+        console.log(checkPrevPassword);
         if (!checkPassword) {
             throw new ApiError("your old password is incorrect");
         }
+        if (currentPassword && checkPrevPassword) {
+            throw new ApiError("please use different password");
+        }
     }
-    const user = yield User.findOneAndUpdate({ email: validateInfo.data.email }, {
-        $set: {
-            fullname: validateInfo.data.fullname,
-            gender: validateInfo.data.gender,
-            dob: validateInfo.data.dob,
-            mobile: validateInfo.data.mobile,
-            password: confirmPassword,
-        },
-    }, {
-        new: true,
-    });
+    const user = yield User.findOne({ email: validateInfo.data.email });
+    user.fullname = validateInfo.data.fullname,
+        user.gender = validateInfo.data.gender,
+        user.dob = validateInfo.data.dob,
+        user.mobile = validateInfo.data.mobile,
+        user.password = confirmPassword;
+    yield user.save();
     if (!user) {
         throw new ApiError("user not found");
     }

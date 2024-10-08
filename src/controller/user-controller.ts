@@ -84,6 +84,7 @@ export const loginUser = asyncHandler(async (req, resp) => {
   }
 
   const checkPassword = await findUser.comparePassword(password);
+  
 
   if (!checkPassword) {
     throw new ApiError("incorrect password");
@@ -277,28 +278,29 @@ export const editProfile = asyncHandler(async (req, resp) => {
   }
 
   if (!findUser.oAuthLogin) {
-    const checkPassword = findUser.comparePassword(currentPassword);
+    const checkPassword = await findUser.comparePassword(currentPassword);
+    const checkPrevPassword = await findUser.comparePassword(newPassword)
+    console.log(checkPassword)
+    console.log(checkPrevPassword)
 
     if (!checkPassword) {
       throw new ApiError("your old password is incorrect");
     }
+
+    if (currentPassword && checkPrevPassword) {
+      throw new ApiError("please use different password")
+    }
   }
 
-  const user = await User.findOneAndUpdate(
-    { email: validateInfo.data.email },
-    {
-      $set: {
-        fullname: validateInfo.data.fullname,
-        gender: validateInfo.data.gender,
-        dob: validateInfo.data.dob,
-        mobile: validateInfo.data.mobile,
-        password: confirmPassword,
-      },
-    },
-    {
-      new: true,
-    }
-  );
+
+  const user = await User.findOne({ email: validateInfo.data.email });
+  
+user.fullname= validateInfo.data.fullname,
+        user.gender= validateInfo.data.gender,
+        user.dob= validateInfo.data.dob,
+        user.mobile= validateInfo.data.mobile,
+  user.password = confirmPassword
+  await user.save()
 
   if (!user) {
     throw new ApiError("user not found");
