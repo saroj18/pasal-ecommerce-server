@@ -44,7 +44,7 @@ export const socketConnection = (server: Server) => {
         socketData = JSON.parse(socketData);
         // console.log(socketData);
         socketData.sender = user._id;
-        socketController(socketInfo.get(socketData.receiver), socketData);
+        socketController(socketInfo.get(socketData.receiver),socketInfo.get(user._id.toString()), socketData);
       });
     } catch (error) {
       console.log(error.message);

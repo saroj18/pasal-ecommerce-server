@@ -11,14 +11,14 @@ import { User } from "../model/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Chat } from "../model/chat-model.js";
 import { Product } from "../model/product-model.js";
-export const socketController = (socket, data) => {
-    console.log("eventName", data.type);
+export const socketController = (socket, ownSocket, data) => {
+    console.log("eventName", data);
     switch (data.type) {
         case "typing":
             startTyping(socket, data);
             break;
         case "customer_and_vendor_chat":
-            chatWithVendorAndCustomer(socket, data);
+            chatWithVendorAndCustomer(socket, ownSocket, data);
             break;
         case "rtcOffer":
             rtcOfferHandler(socket, data);
@@ -44,10 +44,10 @@ const startTyping = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, 
         }));
     }
     catch (error) {
-        console.log(error.message);
+        console.log('er>>>', error.message);
     }
 });
-const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { sender, receiver, message, type, product }) {
+const chatWithVendorAndCustomer = (socket_1, ownSocket_1, _a) => __awaiter(void 0, [socket_1, ownSocket_1, _a], void 0, function* (socket, ownSocket, { sender, receiver, message, type, product }) {
     try {
         const findUser = yield User.findById(receiver);
         if (!findUser) {
@@ -63,6 +63,15 @@ const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1,
         if (!saveChat) {
             throw new ApiError("failed to save on db");
         }
+        if (!socket) {
+            console.log('own>>', ownSocket);
+            ownSocket.send(JSON.stringify({
+                type: 'error',
+                errorName: 'chatWithVendorAndCustomer',
+                message
+            }));
+            return;
+        }
         const findProduct = yield Product.findById(product);
         socket.send(JSON.stringify({
             sender,
@@ -73,7 +82,7 @@ const chatWithVendorAndCustomer = (socket_1, _a) => __awaiter(void 0, [socket_1,
         }));
     }
     catch (error) {
-        console.log(error.message);
+        console.log('err>>', error.message);
     }
 });
 const rtcOfferHandler = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, function* (socket, { receiver, sender, sdp, type }) {

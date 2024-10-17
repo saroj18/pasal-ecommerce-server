@@ -22,16 +22,17 @@ type webRtcMessageType = Pick<
 };
 
 export const socketController = (
-  socket: WebSocket,
+  socket: WebSocket|null,
+  ownSocket:WebSocket,
   data: SocketMessageType | webRtcMessageType
 ) => {
-  console.log("eventName", data.type);
+  console.log("eventName", data);
   switch (data.type) {
     case "typing":
       startTyping(socket, data as SocketMessageType);
       break;
     case "customer_and_vendor_chat":
-      chatWithVendorAndCustomer(socket, data as SocketMessageType);
+      chatWithVendorAndCustomer(socket,ownSocket, data as SocketMessageType);
       break;
     case "rtcOffer":
       rtcOfferHandler(socket, data as webRtcMessageType);
@@ -50,6 +51,7 @@ const startTyping = async (
   { sender, receiver, message, type }: SocketMessageType
 ) => {
   try {
+    
     const findUser = await User.findById(receiver);
 
     if (!findUser) {
@@ -63,15 +65,17 @@ const startTyping = async (
       })
     );
   } catch (error) {
-    console.log(error.message);
+    console.log('er>>>', error.message);
   }
 };
 
 const chatWithVendorAndCustomer = async (
   socket: WebSocket,
+  ownSocket:WebSocket,
   { sender, receiver, message, type, product }: SocketMessageType
 ) => {
   try {
+   
     const findUser = await User.findById(receiver);
 
     if (!findUser) {
@@ -90,6 +94,18 @@ const chatWithVendorAndCustomer = async (
       throw new ApiError("failed to save on db");
     }
 
+    if (!socket) {
+      console.log('own>>',ownSocket)
+      ownSocket.send(
+        JSON.stringify({
+          type: 'error',
+          errorName: 'chatWithVendorAndCustomer',
+          message
+        })
+      )
+      return
+    }
+
     const findProduct = await Product.findById(product);
 
     socket.send(
@@ -102,7 +118,8 @@ const chatWithVendorAndCustomer = async (
       })
     );
   } catch (error) {
-    console.log(error.message);
+    console.log('err>>', error.message);
+   
   }
 };
 
