@@ -1,0 +1,11 @@
+version: '3.1'
+
+services:
+  web:
+   build:
+    context: .
+   ports:
+     - 4000:4000
+   env_file:
+     - .env
+    
