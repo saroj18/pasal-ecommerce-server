@@ -123,42 +123,44 @@ export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
 
 //get all products for all users
 export const getAllProducts = asyncHandler(async (req, resp) => {
-  const { skip, limit } = req.query;
-  console.log('skip',skip)
-  if (!skip&&!limit||skip=='0'&&limit=='0') {
+  let info = req.query;
+  const skip = info.skip ?? 0;
+  const limit = info.limit ?? 0;
+
+  if ((!skip && !limit) || (skip == "0" && limit == "0")) {
     const findProducts = await Product.aggregate([
-    {
-      $lookup: {
-        from: "shops",
-        localField: "addedBy",
-        foreignField: "_id",
-        as: "addedBy",
-      },
-    },
-    {
-      $lookup: {
-        from: "reviews",
-        localField: "review",
-        foreignField: "_id",
-        as: "review",
-      },
-    },
-    {
-      $addFields: {
-        addedBy: {
-          $arrayElemAt: ["$addedBy", 0],
-        },
-        review: { $arrayElemAt: ["$review", 0] },
-        rating: {
-          $avg: "$starArray",
+      {
+        $lookup: {
+          from: "shops",
+          localField: "addedBy",
+          foreignField: "_id",
+          as: "addedBy",
         },
       },
-    },
-  ]);
-  console.log(findProducts)
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "review",
+          foreignField: "_id",
+          as: "review",
+        },
+      },
+      {
+        $addFields: {
+          addedBy: {
+            $arrayElemAt: ["$addedBy", 0],
+          },
+          review: { $arrayElemAt: ["$review", 0] },
+          rating: {
+            $avg: "$starArray",
+          },
+        },
+      },
+    ]);
+    console.log(findProducts);
 
     resp.status(200).json(new ApiResponse("", 200, findProducts));
-    return
+    return;
   }
 
   const findProducts = await Product.aggregate([
@@ -196,7 +198,7 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
       $limit: Number(limit),
     },
   ]);
-  console.log(findProducts)
+  console.log(findProducts);
 
   resp.status(200).json(new ApiResponse("", 200, findProducts));
 });

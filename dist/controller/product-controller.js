@@ -106,9 +106,11 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
 }));
 //get all products for all users
 export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const { skip, limit } = req.query;
-    console.log('skip', skip);
-    if (!skip && !limit || skip == '0' && limit == '0') {
+    var _a, _b;
+    let info = req.query;
+    const skip = (_a = info.skip) !== null && _a !== void 0 ? _a : 0;
+    const limit = (_b = info.limit) !== null && _b !== void 0 ? _b : 0;
+    if ((!skip && !limit) || (skip == "0" && limit == "0")) {
         const findProducts = yield Product.aggregate([
             {
                 $lookup: {
