@@ -3,10 +3,9 @@ import { sellerDashboardData, sellerDashBoardGraphData, shopVerify, } from "../.
 import { upload } from "../../middleware/multer.js";
 import { sellerAuth } from "../../middleware/sellerAuth.js";
 import { publicAuth } from "../../middleware/publicAuth.js";
+import { Auth } from "../../middleware/auth.js";
 export const sellerRoute = Router();
-sellerRoute
-    .route("/verify")
-    .post(sellerAuth, upload.array("images", 3), shopVerify);
+sellerRoute.route("/verify").post(Auth, upload.array("images", 3), shopVerify);
 sellerRoute.route("/sellerdashboard").get(sellerAuth, sellerDashboardData);
 sellerRoute
     .route("/sellerdashboardgraph")

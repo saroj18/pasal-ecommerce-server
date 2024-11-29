@@ -68,24 +68,21 @@ export const vendorVefify = asyncHandler(async (req, resp) => {
   }
 
   if (flag === "reject") {
-    const shopUser = await Shop.findByIdAndUpdate(shopId, {
-      $set: {
-        verified: false,
-      },
-    }).populate("owner");
+    const delteShop = await Shop.findByIdAndDelete(shopId).populate("owner");
+    console.log(delteShop);
 
-    await User.findByIdAndUpdate(shopUser.owner, {
+    await User.findByIdAndUpdate(delteShop.owner, {
       $set: {
-        shopVerify:false
-      }
-    })
+        shopVerify: false,
+      },
+    });
 
     const emailSend = await sendEmail(
-      (shopUser.owner as Customer).email,
+      (delteShop.owner as Customer).email,
       "Shop Verified",
       shopVerifyRejectEmailContent(
-        (shopUser.owner as Customer).fullname,
-        shopUser.shopName,
+        (delteShop.owner as Customer).fullname,
+        delteShop.shopName,
         report
       )
     );
@@ -94,8 +91,6 @@ export const vendorVefify = asyncHandler(async (req, resp) => {
       throw new ApiError("failed to send email");
     }
 
-    resp
-      .status(200)
-      .json(new ApiResponse("send mail successfully", 200, null));
+    resp.status(200).json(new ApiResponse("send mail successfully", 200, null));
   }
 });

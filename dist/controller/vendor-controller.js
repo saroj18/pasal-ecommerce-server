@@ -53,22 +53,17 @@ export const vendorVefify = asyncHandler((req, resp) => __awaiter(void 0, void 0
             .json(new ApiResponse("vendor verify successfully", 200, null));
     }
     if (flag === "reject") {
-        const shopUser = yield Shop.findByIdAndUpdate(shopId, {
+        const delteShop = yield Shop.findByIdAndDelete(shopId).populate("owner");
+        console.log(delteShop);
+        yield User.findByIdAndUpdate(delteShop.owner, {
             $set: {
-                verified: false,
+                shopVerify: false,
             },
-        }).populate("owner");
-        yield User.findByIdAndUpdate(shopUser.owner, {
-            $set: {
-                shopVerify: false
-            }
         });
-        const emailSend = yield sendEmail(shopUser.owner.email, "Shop Verified", shopVerifyRejectEmailContent(shopUser.owner.fullname, shopUser.shopName, report));
+        const emailSend = yield sendEmail(delteShop.owner.email, "Shop Verified", shopVerifyRejectEmailContent(delteShop.owner.fullname, delteShop.shopName, report));
         if (!emailSend) {
             throw new ApiError("failed to send email");
         }
-        resp
-            .status(200)
-            .json(new ApiResponse("send mail successfully", 200, null));
+        resp.status(200).json(new ApiResponse("send mail successfully", 200, null));
     }
 }));
