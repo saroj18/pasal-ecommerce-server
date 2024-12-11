@@ -1,11 +1,18 @@
-version: '3.1'
+version: "3.8"
 
 services:
-  web:
-   build:
-    context: .
-   ports:
-     - 4000:4000
-   env_file:
-     - .env
-    
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - "6379:6379" # Expose Redis on localhost
+    volumes:
+      - redis-data:/data # Persist data on the host
+    networks:
+      - redis-network
+
+volumes:
+  redis-data: # Named volume for data persistence
+
+networks:
+  redis-network: # Dedicated network for Redis service
