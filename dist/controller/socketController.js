@@ -37,7 +37,7 @@ const startTyping = (socket_1, _a) => __awaiter(void 0, [socket_1, _a], void 0, 
         if (!findUser) {
             throw new ApiError("user not round");
         }
-        socket.send(JSON.stringify({
+        socket === null || socket === void 0 ? void 0 : socket.send(JSON.stringify({
             sender,
             message,
             type,

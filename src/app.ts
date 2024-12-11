@@ -21,9 +21,11 @@ import GoogleStrategy from "passport-google-oauth20";
 import passport from "passport";
 import { mailRoute } from "./route/user/mail-route.js";
 import { coupenRoute } from "./route/user/coupen-route.js";
+import { Redis } from "ioredis";
 dotenv.config();
 
 export const app = express();
+export const redis = new Redis();
 
 export const server = http.createServer(app);
 

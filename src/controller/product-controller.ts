@@ -14,6 +14,7 @@ import {
 import { errorFormatter } from "../utils/errorFormater.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
 import { ObjectId } from "mongodb";
+import { redis } from "../app.js";
 
 //product add by seller
 export const addProduct = asyncHandler(async (req, resp) => {
@@ -86,6 +87,13 @@ export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
     throw new ApiError("you are unauthorized person");
   }
 
+  const checkChache = await redis.get(`inventory${id}`);
+
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+    return;
+  }
+
   // const findProducts = await Product.find({ addedBy: id }).populate({
   //   path: "addedBy",
   //   select: "-refreshToken -password",
@@ -118,6 +126,9 @@ export const getInventoryOfProducts = asyncHandler(async (req, resp) => {
     },
   ]);
 
+  await redis.set(`inventory${id}`, JSON.stringify(findProducts));
+  await redis.expire(`inventory${id}`, 60);
+
   resp.status(200).json(new ApiResponse("", 200, findProducts));
 });
 
@@ -128,6 +139,13 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
   const limit = info.limit ?? 0;
 
   if ((!skip && !limit) || (skip == "0" && limit == "0")) {
+    const checkChache = await redis.get(JSON.stringify(info));
+
+    if (checkChache) {
+      resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+      return;
+    }
+
     const findProducts = await Product.aggregate([
       {
         $lookup: {
@@ -158,8 +176,16 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
       },
     ]);
     console.log(findProducts);
+    await redis.set(JSON.stringify(info), JSON.stringify(findProducts));
+    await redis.expire(JSON.stringify(info), 60);
 
     resp.status(200).json(new ApiResponse("", 200, findProducts));
+    return;
+  }
+
+  const checkChache = await redis.get("allProducts");
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
     return;
   }
 
@@ -199,6 +225,8 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
     },
   ]);
   console.log(findProducts);
+  await redis.set("allProducts", JSON.stringify(findProducts));
+  await redis.expire("allProducts", 60);
 
   resp.status(200).json(new ApiResponse("", 200, findProducts));
 });
@@ -206,6 +234,17 @@ export const getAllProducts = asyncHandler(async (req, resp) => {
 //get single product for customer
 export const getSingleProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+
+  const checkChache = await redis.get(`product${id}`);
+
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+    return;
+  }
 
   const findProduct = await Product.aggregate([
     {
@@ -337,6 +376,9 @@ export const getSingleProduct = asyncHandler(async (req, resp) => {
   findProduct[0].relatedProducts = relatedProducts;
   findProduct[0].ourOtherProducts = ourOtherProducts;
 
+  await redis.set(`product${id}`, JSON.stringify(findProduct[0]));
+  await redis.expire(`product${id}`, 60);
+
   resp.status(200).json(new ApiResponse("", 200, findProduct[0]));
 });
 
@@ -345,6 +387,12 @@ export const deleteProduct = asyncHandler(async (req, resp) => {
   const { id } = req.params;
 
   const findProduct = await Product.findByIdAndDelete(id);
+
+  const deleteImages = await deleteFromCloudinary(findProduct.images);
+
+  if (!deleteImages) {
+    throw new ApiError("faild to delete images");
+  }
 
   if (!findProduct) {
     throw new ApiError("product not found");
@@ -486,6 +534,13 @@ export const getWishListProduct = asyncHandler(async (req, resp) => {
     throw new ApiError("please provide id");
   }
 
+  const checkChache = await redis.get(`wishlist${_id}`);
+
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+    return;
+  }
+
   const findWishList = await WishList.find({ addedBy: _id }).populate(
     "product"
   );
@@ -493,6 +548,9 @@ export const getWishListProduct = asyncHandler(async (req, resp) => {
   if (!findWishList) {
     throw new ApiError("wishlist is empty");
   }
+
+  await redis.set(`wishlist${_id}`, JSON.stringify(findWishList));
+  await redis.expire(`wishlist${_id}`, 60);
 
   resp.status(200).json(new ApiResponse("", 200, findWishList));
 });
@@ -543,7 +601,21 @@ export const wishListAndCartCount = asyncHandler(async (req, resp) => {
 export const getAllMyProducts = asyncHandler(async (req, resp) => {
   const { id } = req.query;
 
+  if (!id) {
+    throw new ApiError("please provide id");
+  }
+
+  const checkChache = await redis.get(`allMyProducts${id}`);
+
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+    return;
+  }
+
   const findProduct = await Product.find({ addedBy: id || req.shopId });
+
+  await redis.set(`allMyProducts${id}`, JSON.stringify(findProduct));
+  await redis.expire(`allMyProducts${id}`, 60);
 
   resp.json(new ApiResponse("", 200, findProduct));
 });
@@ -646,6 +718,13 @@ export const filterProducts = asyncHandler(async (req, resp) => {
   console.log(Number(rating[0]));
   let id = Number(req.query.id) || 1;
 
+  const checkChache = await redis.get(`filter${JSON.stringify(req.body)}`);
+
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+    return;
+  }
+
   const product = await Product.aggregate([
     {
       $addFields: {
@@ -685,12 +764,26 @@ export const filterProducts = asyncHandler(async (req, resp) => {
     },
   ]);
 
+  await redis.set(`filter${JSON.stringify(req.body)}`, JSON.stringify(product));
+  await redis.expire(`filter${JSON.stringify(req.body)}`, 60);
+
   resp.status(200).json(new ApiResponse("", 200, product));
 });
 
 export const searchProducts = asyncHandler(async (req, resp) => {
   const { query } = req.query;
   console.log(query);
+
+  if (!query) {
+    throw new ApiError("please provide query");
+  }
+
+  const checkChache = await redis.get(`search${query}`);
+
+  if (checkChache) {
+    resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+    return;
+  }
 
   const findProduct = await Product.find({
     $or: [
@@ -700,6 +793,9 @@ export const searchProducts = asyncHandler(async (req, resp) => {
     ],
   }).limit(6);
   console.log(findProduct);
+
+  await redis.set(`search${query}`, JSON.stringify(findProduct));
+  await redis.expire(`search${query}`, 60);
 
   resp.status(200).json(new ApiResponse("", 200, findProduct));
 });

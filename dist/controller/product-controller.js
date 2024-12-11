@@ -15,10 +15,11 @@ import { WishList } from "../model/wishlist-model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
-import { uploadImageOnCloudinary, } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadImageOnCloudinary, } from "../utils/cloudinary.js";
 import { errorFormatter } from "../utils/errorFormater.js";
 import { ProductZodSchema } from "../zodschema/product/product.js";
 import { ObjectId } from "mongodb";
+import { redis } from "../app.js";
 //product add by seller
 export const addProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -72,6 +73,11 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
     if (!id) {
         throw new ApiError("you are unauthorized person");
     }
+    const checkChache = yield redis.get(`inventory${id}`);
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+        return;
+    }
     // const findProducts = await Product.find({ addedBy: id }).populate({
     //   path: "addedBy",
     //   select: "-refreshToken -password",
@@ -102,6 +108,8 @@ export const getInventoryOfProducts = asyncHandler((req, resp) => __awaiter(void
             },
         },
     ]);
+    yield redis.set(`inventory${id}`, JSON.stringify(findProducts));
+    yield redis.expire(`inventory${id}`, 60);
     resp.status(200).json(new ApiResponse("", 200, findProducts));
 }));
 //get all products for all users
@@ -111,6 +119,11 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
     const skip = (_a = info.skip) !== null && _a !== void 0 ? _a : 0;
     const limit = (_b = info.limit) !== null && _b !== void 0 ? _b : 0;
     if ((!skip && !limit) || (skip == "0" && limit == "0")) {
+        const checkChache = yield redis.get(JSON.stringify(info));
+        if (checkChache) {
+            resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+            return;
+        }
         const findProducts = yield Product.aggregate([
             {
                 $lookup: {
@@ -141,7 +154,14 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
             },
         ]);
         console.log(findProducts);
+        yield redis.set(JSON.stringify(info), JSON.stringify(findProducts));
+        yield redis.expire(JSON.stringify(info), 60);
         resp.status(200).json(new ApiResponse("", 200, findProducts));
+        return;
+    }
+    const checkChache = yield redis.get("allProducts");
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
         return;
     }
     const findProducts = yield Product.aggregate([
@@ -180,11 +200,21 @@ export const getAllProducts = asyncHandler((req, resp) => __awaiter(void 0, void
         },
     ]);
     console.log(findProducts);
+    yield redis.set("allProducts", JSON.stringify(findProducts));
+    yield redis.expire("allProducts", 60);
     resp.status(200).json(new ApiResponse("", 200, findProducts));
 }));
 //get single product for customer
 export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
+    if (!id) {
+        throw new ApiError("please provide id");
+    }
+    const checkChache = yield redis.get(`product${id}`);
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+        return;
+    }
     const findProduct = yield Product.aggregate([
         {
             $match: {
@@ -308,12 +338,18 @@ export const getSingleProduct = asyncHandler((req, resp) => __awaiter(void 0, vo
     });
     findProduct[0].relatedProducts = relatedProducts;
     findProduct[0].ourOtherProducts = ourOtherProducts;
+    yield redis.set(`product${id}`, JSON.stringify(findProduct[0]));
+    yield redis.expire(`product${id}`, 60);
     resp.status(200).json(new ApiResponse("", 200, findProduct[0]));
 }));
 //delete products for seller
 export const deleteProduct = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const findProduct = yield Product.findByIdAndDelete(id);
+    const deleteImages = yield deleteFromCloudinary(findProduct.images);
+    if (!deleteImages) {
+        throw new ApiError("faild to delete images");
+    }
     if (!findProduct) {
         throw new ApiError("product not found");
     }
@@ -419,10 +455,17 @@ export const getWishListProduct = asyncHandler((req, resp) => __awaiter(void 0, 
     if (!_id) {
         throw new ApiError("please provide id");
     }
+    const checkChache = yield redis.get(`wishlist${_id}`);
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+        return;
+    }
     const findWishList = yield WishList.find({ addedBy: _id }).populate("product");
     if (!findWishList) {
         throw new ApiError("wishlist is empty");
     }
+    yield redis.set(`wishlist${_id}`, JSON.stringify(findWishList));
+    yield redis.expire(`wishlist${_id}`, 60);
     resp.status(200).json(new ApiResponse("", 200, findWishList));
 }));
 //delete product from wishlist fro customer
@@ -461,7 +504,17 @@ export const wishListAndCartCount = asyncHandler((req, resp) => __awaiter(void 0
 //get all products which is added by seller
 export const getAllMyProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.query;
+    if (!id) {
+        throw new ApiError("please provide id");
+    }
+    const checkChache = yield redis.get(`allMyProducts${id}`);
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+        return;
+    }
     const findProduct = yield Product.find({ addedBy: id || req.shopId });
+    yield redis.set(`allMyProducts${id}`, JSON.stringify(findProduct));
+    yield redis.expire(`allMyProducts${id}`, 60);
     resp.json(new ApiResponse("", 200, findProduct));
 }));
 // for bestselling product on home page and seller dashboard
@@ -552,6 +605,11 @@ export const filterProducts = asyncHandler((req, resp) => __awaiter(void 0, void
     console.log(Number(rating[1]));
     console.log(Number(rating[0]));
     let id = Number(req.query.id) || 1;
+    const checkChache = yield redis.get(`filter${JSON.stringify(req.body)}`);
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+        return;
+    }
     const product = yield Product.aggregate([
         {
             $addFields: {
@@ -584,11 +642,21 @@ export const filterProducts = asyncHandler((req, resp) => __awaiter(void 0, void
             },
         },
     ]);
+    yield redis.set(`filter${JSON.stringify(req.body)}`, JSON.stringify(product));
+    yield redis.expire(`filter${JSON.stringify(req.body)}`, 60);
     resp.status(200).json(new ApiResponse("", 200, product));
 }));
 export const searchProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     const { query } = req.query;
     console.log(query);
+    if (!query) {
+        throw new ApiError("please provide query");
+    }
+    const checkChache = yield redis.get(`search${query}`);
+    if (checkChache) {
+        resp.status(200).json(new ApiResponse("", 200, JSON.parse(checkChache)));
+        return;
+    }
     const findProduct = yield Product.find({
         $or: [
             { name: { $regex: query, $options: "i" } },
@@ -597,5 +665,7 @@ export const searchProducts = asyncHandler((req, resp) => __awaiter(void 0, void
         ],
     }).limit(6);
     console.log(findProduct);
+    yield redis.set(`search${query}`, JSON.stringify(findProduct));
+    yield redis.expire(`search${query}`, 60);
     resp.status(200).json(new ApiResponse("", 200, findProduct));
 }));

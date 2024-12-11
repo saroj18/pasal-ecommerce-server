@@ -57,7 +57,7 @@ const startTyping = async (
     if (!findUser) {
       throw new ApiError("user not round");
     }
-    socket.send(
+    socket?.send(
       JSON.stringify({
         sender,
         message,
