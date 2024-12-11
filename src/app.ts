@@ -25,7 +25,11 @@ import { Redis } from "ioredis";
 dotenv.config();
 
 export const app = express();
-export const redis = new Redis();
+export const redis = new Redis({
+  host: process.env.REDIS_ORIGIN,
+  port: parseInt(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+});
 
 export const server = http.createServer(app);
 
