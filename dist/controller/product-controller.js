@@ -503,7 +503,8 @@ export const wishListAndCartCount = asyncHandler((req, resp) => __awaiter(void 0
 }));
 //get all products which is added by seller
 export const getAllMyProducts = asyncHandler((req, resp) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.query;
+    const id = req.shopId;
+    console.log(id);
     if (!id) {
         throw new ApiError("please provide id");
     }

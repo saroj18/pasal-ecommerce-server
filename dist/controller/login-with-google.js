@@ -30,7 +30,7 @@ export const loginWithGoogle = asyncHandler((req, resp) => __awaiter(void 0, voi
         if (!saveOnDb) {
             throw new ApiError("Failed to save on db");
         }
-        const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser._id);
+        const { accessToken, refreshToken } = yield generateAccessTokenAndRefreshToken(findUser === null || findUser === void 0 ? void 0 : findUser._id);
         saveOnDb.refreshToken = refreshToken;
         yield saveOnDb.save();
         const options = {
@@ -67,7 +67,7 @@ export const loginWithGoogle = asyncHandler((req, resp) => __awaiter(void 0, voi
         if (!shop) {
             throw new ApiError("shop not found");
         }
-        resp.cookie("shopId", shop._id, options);
+        resp.cookie("shopId", shop === null || shop === void 0 ? void 0 : shop._id, options);
     }
     resp.cookie("accessToken", accessToken, options);
     resp.cookie("refreshToken", refreshToken, options);

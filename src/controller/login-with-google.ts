@@ -29,7 +29,7 @@ export const loginWithGoogle = asyncHandler(async (req, resp) => {
 
     const { accessToken, refreshToken } =
       await generateAccessTokenAndRefreshToken(
-        findUser._id as Schema.Types.ObjectId
+        findUser?._id as Schema.Types.ObjectId
       );
 
     saveOnDb.refreshToken = refreshToken;
@@ -78,7 +78,7 @@ export const loginWithGoogle = asyncHandler(async (req, resp) => {
     if (!shop) {
       throw new ApiError("shop not found");
     }
-    resp.cookie("shopId", shop._id, options);
+    resp.cookie("shopId", shop?._id, options);
   }
   resp.cookie("accessToken", accessToken, options);
   resp.cookie("refreshToken", refreshToken, options);
